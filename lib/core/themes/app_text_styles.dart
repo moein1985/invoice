@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
 class AppTextStyles {
-  static const String fontFamily = 'Vazir';
+  static const String fontFamily = 'Roboto'; // یا null برای فونت پیش‌فرض سیستم
 
   // Headings
   static const TextStyle h1 = TextStyle(

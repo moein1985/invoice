@@ -11,9 +11,9 @@ dependencies:
     sdk: flutter
   
   # State Management
-  flutter_bloc: ^8.1.3
+  flutter_bloc: ^9.1.1
   equatable: ^2.0.5
-  get_it: ^7.6.0
+  get_it: ^9.0.5
   
   # Database
   hive: ^2.2.3
@@ -22,7 +22,7 @@ dependencies:
   # Persian Support
   shamsi_date: ^1.0.1
   persian_number_utility: ^1.1.3
-  persian_datetime_picker: ^2.6.0
+  persian_datetime_picker: ^3.2.0
   
   # Export
   excel: ^4.0.0
@@ -31,7 +31,6 @@ dependencies:
   
   # File Handling
   path_provider: ^2.1.0
-  file_picker: ^6.0.0
   open_file: ^3.3.2
   
   # Utilities
@@ -46,15 +45,9 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
+  flutter_lints: ^6.0.0
   hive_generator: ^2.0.0
   build_runner: ^2.4.0
 
 flutter:
   uses-material-design: true
-  
-  # فونت‌های فارسی - باید فایل‌ها را دانلود کنید
-  fonts:
-    - family: Vazir
-      fonts:
-        - asset: assets/fonts/Vazir-Regular.ttf

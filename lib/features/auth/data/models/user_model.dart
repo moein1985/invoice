@@ -5,27 +5,35 @@ part 'user_model.g.dart';
 
 @HiveType(typeId: 0)
 class UserModel extends UserEntity {
+  @override
   @HiveField(0)
   final String id;
 
+  @override
   @HiveField(1)
   final String username;
 
+  @override
   @HiveField(2)
   final String password;
 
+  @override
   @HiveField(3)
   final String fullName;
 
+  @override
   @HiveField(4)
   final String role;
 
+  @override
   @HiveField(5)
   final bool isActive;
 
+  @override
   @HiveField(6)
   final DateTime createdAt;
 
+  @override
   @HiveField(7)
   final DateTime? lastLogin;
 

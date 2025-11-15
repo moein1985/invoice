@@ -7,12 +7,12 @@ class EmptyStateWidget extends StatelessWidget {
   final String? actionText;
 
   const EmptyStateWidget({
-    Key? key,
+    super.key,
     required this.message,
     this.icon = Icons.inbox_outlined,
     this.onAction,
     this.actionText,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

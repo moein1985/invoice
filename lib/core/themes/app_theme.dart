@@ -73,7 +73,7 @@ class AppTheme {
       ),
       
       // Text
-      textTheme: TextTheme(
+      textTheme: const TextTheme(
         displayLarge: AppTextStyles.h1,
         displayMedium: AppTextStyles.h2,
         displaySmall: AppTextStyles.h3,
