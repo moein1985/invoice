@@ -87,4 +87,50 @@ class DocumentEntity extends Equatable {
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'userId': userId,
+      'documentNumber': documentNumber,
+      'documentType': documentType == DocumentType.invoice ? 'invoice' : 'proforma',
+      'customerId': customerId,
+      'documentDate': documentDate.toIso8601String(),
+      'items': items.map((item) => item.toJson()).toList(),
+      'totalAmount': totalAmount,
+      'discount': discount,
+      'finalAmount': finalAmount,
+      'status': status == DocumentStatus.paid
+          ? 'paid'
+          : status == DocumentStatus.unpaid
+              ? 'unpaid'
+              : 'pending',
+      'notes': notes,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+    };
+  }
+
+  factory DocumentEntity.fromJson(Map<String, dynamic> json) {
+    return DocumentEntity(
+      id: json['id'] as String,
+      userId: json['userId'] as String,
+      documentNumber: json['documentNumber'] as String,
+      documentType: json['documentType'] == 'invoice' ? DocumentType.invoice : DocumentType.proforma,
+      customerId: json['customerId'] as String,
+      documentDate: DateTime.parse(json['documentDate'] as String),
+      items: (json['items'] as List).map((item) => DocumentItemEntity.fromJson(item as Map<String, dynamic>)).toList(),
+      totalAmount: (json['totalAmount'] as num).toDouble(),
+      discount: (json['discount'] as num).toDouble(),
+      finalAmount: (json['finalAmount'] as num).toDouble(),
+      status: json['status'] == 'paid'
+          ? DocumentStatus.paid
+          : json['status'] == 'unpaid'
+              ? DocumentStatus.unpaid
+              : DocumentStatus.pending,
+      notes: json['notes'] as String?,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
+    );
+  }
 }

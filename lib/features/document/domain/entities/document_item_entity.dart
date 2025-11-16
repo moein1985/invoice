@@ -54,4 +54,30 @@ class DocumentItemEntity extends Equatable {
       description: description ?? this.description,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'productName': productName,
+      'quantity': quantity,
+      'unitPrice': unitPrice,
+      'totalPrice': totalPrice,
+      'profitPercentage': profitPercentage,
+      'supplier': supplier,
+      'description': description,
+    };
+  }
+
+  factory DocumentItemEntity.fromJson(Map<String, dynamic> json) {
+    return DocumentItemEntity(
+      id: json['id'] as String,
+      productName: json['productName'] as String,
+      quantity: json['quantity'] as int,
+      unitPrice: (json['unitPrice'] as num).toDouble(),
+      totalPrice: (json['totalPrice'] as num).toDouble(),
+      profitPercentage: (json['profitPercentage'] as num).toDouble(),
+      supplier: json['supplier'] as String,
+      description: json['description'] as String?,
+    );
+  }
 }

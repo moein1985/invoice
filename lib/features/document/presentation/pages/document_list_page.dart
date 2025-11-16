@@ -1,3 +1,5 @@
+import 'package:desktop_multi_window/desktop_multi_window.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/enums/document_type.dart';
@@ -8,9 +10,12 @@ import '../../../../core/utils/number_formatter.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/error_widget.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
+import '../../../../core/utils/window_arguments.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../customer/domain/entities/customer_entity.dart';
 import '../../../customer/presentation/bloc/customer_bloc.dart';
+import '../../domain/entities/document_entity.dart';
 import '../bloc/document_bloc.dart';
 import '../bloc/document_event.dart';
 import '../bloc/document_state.dart';
@@ -240,11 +245,7 @@ class _DocumentListPageState extends State<DocumentListPage> with SingleTickerPr
                       onSelected: (value) {
                         switch (value) {
                           case 'view':
-                            Navigator.pushNamed(
-                              context,
-                              '/documents/preview',
-                              arguments: doc.id,
-                            );
+                            _openDocumentPreview(doc.id);
                             break;
                           case 'edit':
                             _navigateToForm(documentId: doc.id);
@@ -268,6 +269,77 @@ class _DocumentListPageState extends State<DocumentListPage> with SingleTickerPr
         return const Center(child: Text('خطای غیرمنتظره'));
       },
     );
+  }
+
+  Future<void> _openDocumentPreview(String documentId) async {
+    // Find the document from current state
+    final documentState = context.read<DocumentBloc>().state;
+    DocumentEntity? document;
+    if (documentState is DocumentsLoaded) {
+      try {
+        document = documentState.documents.firstWhere((d) => d.id == documentId);
+      } catch (_) {}
+    }
+
+    final openedInNewWindow = await _tryOpenDetachedPreview(documentId, document);
+    if (!openedInNewWindow && mounted) {
+      Navigator.pushNamed(
+        context,
+        '/documents/preview',
+        arguments: documentId,
+      );
+    }
+  }
+
+  Future<bool> _tryOpenDetachedPreview(String documentId, DocumentEntity? document) async {
+    if (!_supportsDetachedPreview || document == null) return false;
+    
+    // Ensure customers are loaded first
+    final customerBloc = context.read<CustomerBloc>();
+    if (customerBloc.state is! CustomersLoaded) {
+      customerBloc.add(const LoadCustomers());
+      // Wait a moment for customers to load
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+    
+    // Find customer data
+    final customerState = customerBloc.state;
+    CustomerEntity? customer;
+    if (customerState is CustomersLoaded) {
+      try {
+        customer = customerState.customers.firstWhere((c) => c.id == document.customerId);
+        debugPrint('Found customer: ${customer.name} for document ${document.documentNumber}');
+      } catch (_) {
+        debugPrint('Customer not found for ID: ${document.customerId}');
+      }
+    } else {
+      debugPrint('Customers not loaded, state: ${customerState.runtimeType}');
+    }
+
+    try {
+      final args = AppWindowArguments.preview(
+        documentId: documentId,
+        documentData: document.toJson(),
+        customerData: customer?.toJson(),
+      ).encode();
+      final controller = await WindowController.create(
+        WindowConfiguration(arguments: args),
+      );
+      await controller.show();
+      return true;
+    } catch (error) {
+      debugPrint('Failed to open detached preview window: $error');
+      return false;
+    }
+  }
+
+  bool get _supportsDetachedPreview {
+    if (kIsWeb) return false;
+    return {
+      TargetPlatform.windows,
+      TargetPlatform.linux,
+      TargetPlatform.macOS,
+    }.contains(defaultTargetPlatform);
   }
 
   Color _getStatusColor(DocumentStatus status) {

@@ -59,7 +59,7 @@ void main() {
     });
 
     test('updateUser duplicate username throws', () async {
-      final u1 = await ds.createUser(username: 'u1', password: '1', fullName: 'U1', role: 'user');
+      await ds.createUser(username: 'u1', password: '1', fullName: 'U1', role: 'user');
       final u2 = await ds.createUser(username: 'u2', password: '2', fullName: 'U2', role: 'user');
       expect(() => ds.updateUser(id: u2.id, username: 'u1'), throwsA(isA<CacheException>()));
     });

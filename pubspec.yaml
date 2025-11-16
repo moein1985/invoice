@@ -28,6 +28,7 @@ dependencies:
   excel: ^4.0.0
   pdf: ^3.10.0
   printing: ^5.11.0
+  desktop_multi_window: ^0.3.0
   
   # File Handling
   path: ^1.9.0

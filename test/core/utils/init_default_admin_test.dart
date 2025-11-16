@@ -38,7 +38,7 @@ void main() {
       expect(Hive.isBoxOpen(HiveBoxes.users), isTrue);
       final box = Hive.box<UserModel>(HiveBoxes.users);
       expect(box.isNotEmpty, isTrue);
-      final admin = box.get('1') as UserModel?;
+      final admin = box.get('1');
       expect(admin, isNotNull);
       expect(admin!.username, equals('admin'));
       expect(admin.role, equals('admin'));

@@ -74,6 +74,7 @@ class DocumentItemModel extends DocumentItemEntity {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       'id': id,

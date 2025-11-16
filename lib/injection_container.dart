@@ -47,9 +47,14 @@ import 'features/export/services/pdf_export_service.dart';
 import 'features/export/services/excel_export_service.dart';
 
 final sl = GetIt.instance;
+bool _initialized = false;
 
 /// مقداردهی اولیه Dependency Injection
 Future<void> init() async {
+  if (_initialized) {
+    return;
+  }
+  _initialized = true;
   //! Features - Auth
   // Bloc
   sl.registerLazySingleton(

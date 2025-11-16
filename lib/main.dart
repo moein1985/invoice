@@ -1,12 +1,15 @@
+import 'package:desktop_multi_window/desktop_multi_window.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/themes/app_theme.dart';
 import 'core/utils/init_default_admin.dart';
 import 'core/utils/logger.dart';
 import 'core/observers/bloc_observer.dart';
 import 'core/constants/hive_boxes.dart';
+import 'core/utils/window_arguments.dart';
 import 'features/auth/data/models/user_model.dart';
 import 'features/customer/data/models/customer_model.dart';
 import 'features/document/data/models/document_model.dart';
@@ -32,12 +35,49 @@ import 'features/document/presentation/pages/document_preview_page.dart';
 import 'core/enums/document_type.dart';
 import 'injection_container.dart' as di;
 
-void main() async {
+bool _appServicesInitialized = false;
+
+Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  final windowArguments = await _resolveWindowArguments();
+
+  if (windowArguments.isPreview && 
+      windowArguments.documentId != null && 
+      windowArguments.documentData != null) {
+    // Preview windows don't need database - use serialized data
+    runApp(PreviewWindowApp(
+      documentId: windowArguments.documentId!,
+      documentData: windowArguments.documentData!,
+      customerData: windowArguments.customerData,
+    ));
+    return;
+  }
+
+  await _initializeAppServices();
+  runApp(const MainApp());
+}
+
+Future<AppWindowArguments> _resolveWindowArguments() async {
+  if (_isDesktop) {
+    try {
+      final controller = await WindowController.fromCurrentEngine();
+      return AppWindowArguments.decode(controller.arguments);
+    } catch (_) {
+      // fallthrough to main window behaviour
+    }
+  }
+  return const AppWindowArguments.main();
+}
+
+Future<void> _initializeAppServices() async {
+  if (_appServicesInitialized) {
+    return;
+  }
 
   // فعال‌سازی BLoC Observer برای لاگینگ
   Bloc.observer = AppBlocObserver();
-  
+
   // تنظیم سطح لاگ (می‌توانید به debug، info یا warning تغییر دهید)
   AppLogger.currentLevel = LogLevel.debug;
 
@@ -45,13 +85,13 @@ void main() async {
 
   // مقداردهی اولیه Hive
   await Hive.initFlutter();
-  
+
   // ثبت Adapter های Hive
   Hive.registerAdapter(UserModelAdapter());
   Hive.registerAdapter(CustomerModelAdapter());
   Hive.registerAdapter(DocumentModelAdapter());
   Hive.registerAdapter(DocumentItemModelAdapter());
-  
+
   // باز کردن Boxes فقط در صورت نیاز
   if (!Hive.isBoxOpen(HiveBoxes.users)) {
     await Hive.openBox<UserModel>(HiveBoxes.users);
@@ -75,7 +115,19 @@ void main() async {
   // ایجاد ادمین پیش‌فرض
   await initDefaultAdmin();
 
-  runApp(const MainApp());
+  _appServicesInitialized = true;
+}
+
+bool get _isDesktop {
+  if (kIsWeb) return false;
+  switch (defaultTargetPlatform) {
+    case TargetPlatform.windows:
+    case TargetPlatform.linux:
+    case TargetPlatform.macOS:
+      return true;
+    default:
+      return false;
+  }
 }
 
 class MainApp extends StatelessWidget {
@@ -220,6 +272,39 @@ class MainApp extends StatelessWidget {
           }
           return null;
         },
+      ),
+    );
+  }
+}
+
+class PreviewWindowApp extends StatelessWidget {
+  final String documentId;
+  final Map<String, dynamic> documentData;
+  final Map<String, dynamic>? customerData;
+
+  const PreviewWindowApp({
+    super.key, 
+    required this.documentId,
+    required this.documentData,
+    this.customerData,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'پیش‌نمایش سند',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.lightTheme,
+      locale: const Locale('fa', 'IR'),
+      supportedLocales: const [Locale('fa', 'IR')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: StaticDocumentPreviewPage(
+        documentData: documentData,
+        customerData: customerData,
       ),
     );
   }

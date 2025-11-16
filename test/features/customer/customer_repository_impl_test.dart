@@ -1,7 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:hive/hive.dart';
-import 'dart:io';
 import 'package:invoice/features/customer/data/datasources/customer_local_datasource.dart';
 import 'package:invoice/features/customer/data/models/customer_model.dart';
 import 'package:invoice/features/customer/data/repositories/customer_repository_impl.dart';
