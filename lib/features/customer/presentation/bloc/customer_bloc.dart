@@ -1,4 +1,3 @@
-import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../../domain/usecases/create_customer_usecase.dart';

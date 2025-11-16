@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/user_entity.dart';
@@ -48,6 +49,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final user = await localDataSource.getCurrentUser();
       return Right(user);
     } on CacheException catch (e) {
+
       return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(CacheFailure('خطای نامشخص: ${e.toString()}'));
@@ -59,3 +61,4 @@ class AuthRepositoryImpl implements AuthRepository {
     return await localDataSource.isLoggedIn();
   }
 }
+

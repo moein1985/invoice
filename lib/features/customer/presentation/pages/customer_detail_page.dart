@@ -103,16 +103,16 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
               children: [
                 CircleAvatar(
                   radius: 50,
-                  backgroundColor: customer.isActive
+                    backgroundColor: customer.isActive
                       ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.surfaceVariant,
+                      : Theme.of(context).colorScheme.surfaceContainerHighest,
                   child: Text(
                     customer.name.isNotEmpty ? customer.name[0] : '?',
                     style: TextStyle(
                       fontSize: 32,
                       color: customer.isActive
                           ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                          : Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -127,8 +127,8 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: customer.isActive
-                        ? Colors.green.withOpacity(0.1)
-                        : Colors.red.withOpacity(0.1),
+                      ? Colors.green.withValues(alpha: 0.1)
+                      : Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(

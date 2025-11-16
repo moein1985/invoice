@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/utils/logger.dart';
 import '../../domain/usecases/create_user_usecase.dart';
 import '../../domain/usecases/delete_user_usecase.dart';
 import '../../domain/usecases/get_users_usecase.dart';
@@ -36,13 +37,20 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     LoadUsers event,
     Emitter<UserState> emit,
   ) async {
+    logInfo('Loading users...');
     emit(const UserLoading());
 
     final result = await getUsersUseCase();
 
     result.fold(
-      (failure) => emit(UserError(failure.message)),
-      (users) => emit(UsersLoaded(users)),
+      (failure) {
+        logError('Failed to load users', failure.message);
+        emit(UserError(failure.message));
+      },
+      (users) {
+        logInfo('Users loaded successfully: ${users.length} users');
+        emit(UsersLoaded(users));
+      },
     );
   }
 

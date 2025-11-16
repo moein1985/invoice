@@ -20,54 +20,79 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  bool _hasLoadedData = false;
+
   @override
   void initState() {
     super.initState();
-    // بارگذاری داده‌های داشبورد
-    final authState = context.read<AuthBloc>().state;
-    if (authState is Authenticated) {
-      context.read<DashboardBloc>().add(LoadDashboardData(authState.user.id));
-    }
+
+    // Load data after first frame if auth is already ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authState = context.read<AuthBloc>().state;
+
+      if (authState is Authenticated && !_hasLoadedData) {
+
+        _loadDashboardData(authState.user.id);
+      }
+    });
+  }
+
+  void _loadDashboardData(String userId) {
+    if (_hasLoadedData) return;
+
+    context.read<DashboardBloc>().add(LoadDashboardData(userId));
+    _hasLoadedData = true;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('داشبورد'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              final authState = context.read<AuthBloc>().state;
-              if (authState is Authenticated) {
-                context.read<DashboardBloc>().add(LoadDashboardData(authState.user.id));
-              }
-            },
-          ),
-        ],
-      ),
-      drawer: _buildDrawer(),
-      body: BlocBuilder<DashboardBloc, DashboardState>(
-        builder: (context, state) {
-          if (state is DashboardInitial || state is DashboardLoading) {
-            return const LoadingWidget();
-          } else if (state is DashboardError) {
-            return ErrorDisplayWidget(
-              message: state.message,
-              onRetry: () {
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, authState) {
+
+        if (authState is Authenticated && !_hasLoadedData) {
+
+          _loadDashboardData(authState.user.id);
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('داشبورد'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () {
                 final authState = context.read<AuthBloc>().state;
                 if (authState is Authenticated) {
-                  context.read<DashboardBloc>().add(LoadDashboardData(authState.user.id));
+                  _hasLoadedData = false;
+                  _loadDashboardData(authState.user.id);
                 }
               },
-            );
-          } else if (state is DashboardLoaded) {
-            return _buildDashboardContent(state.dashboardData);
-          }
+            ),
+          ],
+        ),
+        drawer: _buildDrawer(),
+        body: BlocBuilder<DashboardBloc, DashboardState>(
+          builder: (context, state) {
+            if (state is DashboardInitial || state is DashboardLoading) {
+              return const LoadingWidget();
+            } else if (state is DashboardError) {
+              return ErrorDisplayWidget(
+                message: state.message,
+                onRetry: () {
+                  final authState = context.read<AuthBloc>().state;
+                  if (authState is Authenticated) {
+                    _hasLoadedData = false;
+                    _loadDashboardData(authState.user.id);
+                  }
+                },
+              );
+            } else if (state is DashboardLoaded) {
+              return _buildDashboardContent(state.dashboardData);
+            }
 
-          return const SizedBox.shrink();
-        },
+            return const SizedBox.shrink();
+          },
+        ),
       ),
     );
   }

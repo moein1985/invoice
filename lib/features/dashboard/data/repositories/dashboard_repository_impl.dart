@@ -1,3 +1,4 @@
+
 import 'package:dartz/dartz.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
@@ -13,12 +14,16 @@ class DashboardRepositoryImpl implements DashboardRepository {
   @override
   Future<Either<Failure, DashboardEntity>> getDashboardData(String userId) async {
     try {
+
       final dashboardData = await localDataSource.getDashboardData(userId);
+
       return Right(dashboardData);
     } on CacheException catch (e) {
+
       return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(CacheFailure('خطای نامشخص: ${e.toString()}'));
     }
   }
 }
+

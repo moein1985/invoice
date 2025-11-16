@@ -106,14 +106,14 @@ class _UserDetailPageState extends State<UserDetailPage> {
                   radius: 50,
                   backgroundColor: user.isActive
                       ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.surfaceVariant,
+                      : Theme.of(context).colorScheme.surfaceContainerHighest,
                   child: Text(
                     user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : '?',
                     style: TextStyle(
                       fontSize: 32,
-                      color: user.isActive
+                        color: user.isActive
                           ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                          : Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -128,8 +128,8 @@ class _UserDetailPageState extends State<UserDetailPage> {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: user.isActive
-                        ? Colors.green.withOpacity(0.1)
-                        : Colors.red.withOpacity(0.1),
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(

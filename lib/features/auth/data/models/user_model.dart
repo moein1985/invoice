@@ -5,57 +5,48 @@ part 'user_model.g.dart';
 
 @HiveType(typeId: 0)
 class UserModel extends UserEntity {
+  const UserModel({
+    required super.id,
+    required super.username,
+    required super.password,
+    required super.fullName,
+    required super.role,
+    required super.isActive,
+    required super.createdAt,
+    super.lastLogin,
+  });
+
   @override
   @HiveField(0)
-  final String id;
+  String get id => super.id;
 
   @override
   @HiveField(1)
-  final String username;
+  String get username => super.username;
 
   @override
   @HiveField(2)
-  final String password;
+  String get password => super.password;
 
   @override
   @HiveField(3)
-  final String fullName;
+  String get fullName => super.fullName;
 
   @override
   @HiveField(4)
-  final String role;
+  String get role => super.role;
 
   @override
   @HiveField(5)
-  final bool isActive;
+  bool get isActive => super.isActive;
 
   @override
   @HiveField(6)
-  final DateTime createdAt;
+  DateTime get createdAt => super.createdAt;
 
   @override
   @HiveField(7)
-  final DateTime? lastLogin;
-
-  const UserModel({
-    required this.id,
-    required this.username,
-    required this.password,
-    required this.fullName,
-    required this.role,
-    required this.isActive,
-    required this.createdAt,
-    this.lastLogin,
-  }) : super(
-          id: id,
-          username: username,
-          password: password,
-          fullName: fullName,
-          role: role,
-          isActive: isActive,
-          createdAt: createdAt,
-          lastLogin: lastLogin,
-        );
+  DateTime? get lastLogin => super.lastLogin;
 
   /// تبدیل از JSON
   factory UserModel.fromJson(Map<String, dynamic> json) {

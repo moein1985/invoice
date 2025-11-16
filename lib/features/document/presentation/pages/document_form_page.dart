@@ -25,10 +25,10 @@ class DocumentFormPage extends StatefulWidget {
   final DocumentType initialType;
 
   const DocumentFormPage({
-    Key? key,
+    super.key,
     this.documentId,
     required this.initialType,
-  }) : super(key: key);
+  });
 
   @override
   State<DocumentFormPage> createState() => _DocumentFormPageState();
@@ -53,7 +53,11 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
   void initState() {
     super.initState();
     _selectedType = widget.initialType;
-    _loadInitialData();
+    // اجرای بارگذاری اولیه بعد از اولین فریم برای اطمینان از دسترسی به Provider ها
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _loadInitialData();
+    });
   }
 
   Future<void> _loadInitialData() async {
@@ -210,7 +214,8 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
         if (state is CustomersLoaded) {
           final customers = state.customers;
           return DropdownButtonFormField<String>(
-            value: _selectedCustomerId,
+            key: ValueKey('customer_${_selectedCustomerId ?? 'none'}'),
+            initialValue: _selectedCustomerId,
             decoration: const InputDecoration(
               labelText: 'مشتری',
               prefixIcon: Icon(Icons.person),
@@ -346,7 +351,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
     final finalAmount = totalAmount - discount;
 
     return Card(
-      color: AppColors.primary.withOpacity(0.1),
+      color: AppColors.primary.withValues(alpha: 0.1),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

@@ -1,8 +1,7 @@
+
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/dashboard_model.dart';
 import '../../../../core/constants/hive_boxes.dart';
-import '../../../../core/enums/document_type.dart';
-import '../../../../core/enums/document_status.dart';
 import '../../../document/data/models/document_model.dart';
 import '../../../customer/data/models/customer_model.dart';
 
@@ -14,8 +13,10 @@ abstract class DashboardLocalDataSource {
 class DashboardLocalDataSourceImpl implements DashboardLocalDataSource {
   @override
   Future<DashboardModel> getDashboardData(String userId) async {
+
     final documentBox = Hive.box<DocumentModel>(HiveBoxes.documents);
     final customerBox = Hive.box<CustomerModel>(HiveBoxes.customers);
+
 
     // فیلتر اسناد بر اساس userId
     final allDocuments = documentBox.values.where((doc) => doc.userId == userId).toList();

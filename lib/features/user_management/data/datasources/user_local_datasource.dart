@@ -1,7 +1,8 @@
 import 'package:hive/hive.dart';
 import '../../../../core/constants/hive_boxes.dart';
 import '../../../../core/error/exceptions.dart';
-import '../models/user_model.dart';
+import '../../../../core/utils/logger.dart';
+import '../../../auth/data/models/user_model.dart';
 
 abstract class UserLocalDataSource {
   /// دریافت لیست همه کاربران
@@ -39,10 +40,31 @@ abstract class UserLocalDataSource {
 }
 
 class UserLocalDataSourceImpl implements UserLocalDataSource {
+  static const _logTag = 'UserLocalDataSource';
+
+  Future<Box<UserModel>> _getUsersBox() async {
+    if (Hive.isBoxOpen(HiveBoxes.users)) {
+      AppLogger.debug('Reusing already opened users box', _logTag);
+      return Hive.box<UserModel>(HiveBoxes.users);
+    }
+
+    try {
+      AppLogger.info('Opening users box for the first time', _logTag);
+      return await Hive.openBox<UserModel>(HiveBoxes.users);
+    } on HiveError catch (e) {
+      // در سناریوهایی مثل hot-restart ممکن است باکس باز باشد اما isBoxOpen هنوز false برگرداند
+      if (e.message.contains('already open')) {
+        AppLogger.warning('users_box reported as already open; reusing existing instance', _logTag);
+        return Hive.box<UserModel>(HiveBoxes.users);
+      }
+      rethrow;
+    }
+  }
+
   @override
   Future<List<UserModel>> getUsers() async {
     try {
-      final usersBox = await Hive.openBox<UserModel>(HiveBoxes.users);
+      final usersBox = await _getUsersBox();
       return usersBox.values.toList();
     } catch (e) {
       throw CacheException('خطا در دریافت لیست کاربران: ${e.toString()}');
@@ -52,7 +74,7 @@ class UserLocalDataSourceImpl implements UserLocalDataSource {
   @override
   Future<UserModel> getUserById(String id) async {
     try {
-      final usersBox = await Hive.openBox<UserModel>(HiveBoxes.users);
+      final usersBox = await _getUsersBox();
       final user = usersBox.get(id);
 
       if (user == null) {
@@ -74,7 +96,7 @@ class UserLocalDataSourceImpl implements UserLocalDataSource {
     required String role,
   }) async {
     try {
-      final usersBox = await Hive.openBox<UserModel>(HiveBoxes.users);
+      final usersBox = await _getUsersBox();
 
       // بررسی وجود نام کاربری تکراری
       final existingUsers = usersBox.values.where((user) => user.username == username);
@@ -110,7 +132,7 @@ class UserLocalDataSourceImpl implements UserLocalDataSource {
     bool? isActive,
   }) async {
     try {
-      final usersBox = await Hive.openBox<UserModel>(HiveBoxes.users);
+      final usersBox = await _getUsersBox();
       final existingUser = usersBox.get(id);
 
       if (existingUser == null) {
@@ -145,7 +167,7 @@ class UserLocalDataSourceImpl implements UserLocalDataSource {
   @override
   Future<void> deleteUser(String id) async {
     try {
-      final usersBox = await Hive.openBox<UserModel>(HiveBoxes.users);
+      final usersBox = await _getUsersBox();
       await usersBox.delete(id);
     } catch (e) {
       throw CacheException('خطا در حذف کاربر: ${e.toString()}');
@@ -155,7 +177,7 @@ class UserLocalDataSourceImpl implements UserLocalDataSource {
   @override
   Future<List<UserModel>> searchUsers(String query) async {
     try {
-      final usersBox = await Hive.openBox<UserModel>(HiveBoxes.users);
+      final usersBox = await _getUsersBox();
       final allUsers = usersBox.values.toList();
 
       if (query.isEmpty) {
@@ -173,7 +195,7 @@ class UserLocalDataSourceImpl implements UserLocalDataSource {
   @override
   Future<UserModel> toggleUserStatus(String id) async {
     try {
-      final usersBox = await Hive.openBox<UserModel>(HiveBoxes.users);
+      final usersBox = await _getUsersBox();
       final user = usersBox.get(id);
 
       if (user == null) {

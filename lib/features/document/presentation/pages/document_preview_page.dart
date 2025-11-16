@@ -1,5 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:open_file/open_file.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import '../../../../core/enums/document_type.dart';
 import '../../../../core/enums/document_status.dart';
 import '../../../../core/themes/app_colors.dart';
@@ -7,20 +12,24 @@ import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/error_widget.dart';
 import '../../../../core/utils/date_utils.dart' as date_utils;
 import '../../../../core/utils/number_formatter.dart';
+import '../../../../core/utils/logger.dart';
+import '../../../../injection_container.dart' as di;
 import '../../../customer/domain/entities/customer_entity.dart';
 import '../../../customer/presentation/bloc/customer_bloc.dart';
 import '../../domain/entities/document_entity.dart';
 import '../bloc/document_bloc.dart';
 import '../bloc/document_state.dart';
 import '../bloc/document_event.dart';
+import '../../../export/services/pdf_export_service.dart';
+import '../../../export/services/excel_export_service.dart';
 
 class DocumentPreviewPage extends StatefulWidget {
   final String documentId;
 
   const DocumentPreviewPage({
-    Key? key,
+    super.key,
     required this.documentId,
-  }) : super(key: key);
+  });
 
   @override
   State<DocumentPreviewPage> createState() => _DocumentPreviewPageState();
@@ -29,11 +38,16 @@ class DocumentPreviewPage extends StatefulWidget {
 class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
   DocumentEntity? _document;
   CustomerEntity? _customer;
+  String? _pendingCustomerId;
 
   @override
   void initState() {
     super.initState();
     context.read<DocumentBloc>().add(LoadDocumentById(widget.documentId));
+    final customerBloc = context.read<CustomerBloc>();
+    if (customerBloc.state is! CustomersLoaded) {
+      customerBloc.add(const LoadCustomers());
+    }
   }
 
   @override
@@ -73,32 +87,56 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
           ),
         ],
       ),
-      body: BlocBuilder<DocumentBloc, DocumentState>(
-        builder: (context, state) {
-          if (state is DocumentLoading) {
-            return const LoadingWidget();
-          } else if (state is DocumentError) {
-            return ErrorDisplayWidget(message: state.message);
-          } else if (state is DocumentLoaded) {
-            _document = state.document;
-            // Load customer info
-            _loadCustomer(state.document.customerId);
-            return _buildPreview();
-          }
+      body: MultiBlocListener(
+        listeners: [
+          BlocListener<CustomerBloc, CustomerState>(
+            listenWhen: (previous, current) => current is CustomersLoaded,
+            listener: (context, state) {
+              if (state is CustomersLoaded) {
+                _resolveCustomer();
+              }
+            },
+          ),
+        ],
+        child: BlocBuilder<DocumentBloc, DocumentState>(
+          builder: (context, state) {
+            if (state is DocumentLoading) {
+              return const LoadingWidget();
+            } else if (state is DocumentError) {
+              return ErrorDisplayWidget(message: state.message);
+            } else if (state is DocumentLoaded) {
+              _document = state.document;
+              _pendingCustomerId = state.document.customerId;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                _resolveCustomer();
+              });
+              return _buildPreview();
+            }
 
-          return const SizedBox.shrink();
-        },
+            return const SizedBox.shrink();
+          },
+        ),
       ),
     );
   }
 
-  void _loadCustomer(String customerId) {
+  void _resolveCustomer() {
+    if (_pendingCustomerId == null) return;
     final customerState = context.read<CustomerBloc>().state;
     if (customerState is CustomersLoaded) {
       try {
-        _customer = customerState.customers.firstWhere((c) => c.id == customerId);
+        final found = customerState.customers.firstWhere((c) => c.id == _pendingCustomerId);
+        if (_customer != found) {
+          setState(() {
+            _customer = found;
+          });
+        }
+        _pendingCustomerId = null;
       } catch (e) {
-        _customer = null;
+        setState(() {
+          _customer = null;
+        });
       }
     }
   }
@@ -116,7 +154,7 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
             borderRadius: BorderRadius.circular(8),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -171,7 +209,7 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: _getStatusColor(_document!.status).withOpacity(0.2),
+            color: _getStatusColor(_document!.status).withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: _getStatusColor(_document!.status)),
           ),
@@ -282,7 +320,7 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
                       _buildTableCell(NumberFormatter.formatWithComma(item.totalPrice)),
                     ],
                   );
-                }).toList(),
+                }),
               ],
             ),
           ],
@@ -293,7 +331,7 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
 
   Widget _buildTotals() {
     return Card(
-      color: AppColors.primary.withOpacity(0.05),
+      color: AppColors.primary.withValues(alpha: 0.05),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -434,31 +472,70 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
   }
 
   Future<void> _exportToPdf() async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('قابلیت خروجی PDF نیاز به فونت فارسی دارد. به زودی اضافه می‌شود...')),
-    );
-    // TODO: Implement PDF export with Persian font
-    // final pdfService = di.sl<PdfExportService>();
-    // final path = 'path/to/save/${_document!.documentNumber}.pdf';
-    // await pdfService.generatePdf(_document!, _customer!, path);
+    if (_document == null || _customer == null) return;
+    try {
+      final dir = await _getExportDirectory();
+      final fileName = _buildFileName('pdf');
+      final path = p.join(dir.path, fileName);
+      final pdfService = di.sl<PdfExportService>();
+      final file = await pdfService.generatePdf(_document!, _customer!, path);
+      _showSnack('فایل PDF در ${file.path} ذخیره شد');
+      await OpenFile.open(file.path);
+    } catch (e, stack) {
+      AppLogger.error('Failed to export PDF', 'DocumentPreview', e, stack);
+      _showSnack('خطا در ایجاد فایل PDF', isError: true);
+    }
   }
 
   Future<void> _exportToExcel() async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('خروجی Excel در حال آماده‌سازی است...')),
-    );
-    // TODO: Implement Excel export
-    // final excelService = di.sl<ExcelExportService>();
-    // final path = 'path/to/save/${_document!.documentNumber}.xlsx';
-    // await excelService.generateExcel(_document!, _customer!, path);
+    if (_document == null || _customer == null) return;
+    try {
+      final dir = await _getExportDirectory();
+      final fileName = _buildFileName('xlsx');
+      final path = p.join(dir.path, fileName);
+      final excelService = di.sl<ExcelExportService>();
+      final file = await excelService.generateExcel(_document!, _customer!, path);
+      _showSnack('فایل Excel در ${file.path} ذخیره شد');
+      await OpenFile.open(file.path);
+    } catch (e, stack) {
+      AppLogger.error('Failed to export Excel', 'DocumentPreview', e, stack);
+      _showSnack('خطا در ایجاد فایل Excel', isError: true);
+    }
   }
 
   Future<void> _printDocument() async {
+    if (_document == null || _customer == null) return;
+    try {
+      final pdfService = di.sl<PdfExportService>();
+      await pdfService.printDocument(_document!, _customer!);
+      _showSnack('سند برای چاپ ارسال شد');
+    } catch (e, stack) {
+      AppLogger.error('Failed to print document', 'DocumentPreview', e, stack);
+      _showSnack('خطا در ارسال سند به چاپگر', isError: true);
+    }
+  }
+
+  Future<Directory> _getExportDirectory() async {
+    final downloads = await getDownloadsDirectory();
+    if (downloads != null) {
+      return downloads;
+    }
+    return getApplicationDocumentsDirectory();
+  }
+
+  String _buildFileName(String extension) {
+    final base = _document?.documentNumber ?? widget.documentId;
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    return '${base}_$timestamp.$extension';
+  }
+
+  void _showSnack(String message, {bool isError = false}) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('قابلیت چاپ نیاز به فونت فارسی دارد. به زودی اضافه می‌شود...')),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? AppColors.error : null,
+      ),
     );
-    // TODO: Implement print
-    // final pdfService = di.sl<PdfExportService>();
-    // await pdfService.printDocument(_document!, _customer!);
   }
 }

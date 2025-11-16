@@ -1,3 +1,4 @@
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/usecases/get_dashboard_data_usecase.dart';
 import 'dashboard_event.dart';
@@ -16,13 +17,20 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     LoadDashboardData event,
     Emitter<DashboardState> emit,
   ) async {
+
     emit(const DashboardLoading());
 
     final result = await getDashboardDataUseCase(event.userId);
 
     result.fold(
-      (failure) => emit(DashboardError(failure.message)),
-      (dashboardData) => emit(DashboardLoaded(dashboardData)),
+      (failure) {
+
+        emit(DashboardError(failure.message));
+      },
+      (dashboardData) {
+
+        emit(DashboardLoaded(dashboardData));
+      },
     );
   }
 }

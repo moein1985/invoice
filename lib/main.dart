@@ -4,6 +4,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/themes/app_theme.dart';
 import 'core/utils/init_default_admin.dart';
+import 'core/utils/logger.dart';
+import 'core/observers/bloc_observer.dart';
 import 'core/constants/hive_boxes.dart';
 import 'features/auth/data/models/user_model.dart';
 import 'features/customer/data/models/customer_model.dart';
@@ -33,6 +35,14 @@ import 'injection_container.dart' as di;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // فعال‌سازی BLoC Observer برای لاگینگ
+  Bloc.observer = AppBlocObserver();
+  
+  // تنظیم سطح لاگ (می‌توانید به debug، info یا warning تغییر دهید)
+  AppLogger.currentLevel = LogLevel.debug;
+
+  AppLogger.info('🚀 Application Starting...', 'MAIN');
+
   // مقداردهی اولیه Hive
   await Hive.initFlutter();
   
@@ -42,11 +52,22 @@ void main() async {
   Hive.registerAdapter(DocumentModelAdapter());
   Hive.registerAdapter(DocumentItemModelAdapter());
   
-  // باز کردن Boxes
-  await Hive.openBox<UserModel>(HiveBoxes.users);
-  await Hive.openBox<String>(HiveBoxes.currentUser);
-  await Hive.openBox<CustomerModel>(HiveBoxes.customers);
-  await Hive.openBox<DocumentModel>(HiveBoxes.documents);
+  // باز کردن Boxes فقط در صورت نیاز
+  if (!Hive.isBoxOpen(HiveBoxes.users)) {
+    await Hive.openBox<UserModel>(HiveBoxes.users);
+  }
+  if (!Hive.isBoxOpen(HiveBoxes.auth)) {
+    await Hive.openBox(HiveBoxes.auth);
+  }
+  if (!Hive.isBoxOpen(HiveBoxes.currentUser)) {
+    await Hive.openBox<String>(HiveBoxes.currentUser);
+  }
+  if (!Hive.isBoxOpen(HiveBoxes.customers)) {
+    await Hive.openBox<CustomerModel>(HiveBoxes.customers);
+  }
+  if (!Hive.isBoxOpen(HiveBoxes.documents)) {
+    await Hive.openBox<DocumentModel>(HiveBoxes.documents);
+  }
 
   // مقداردهی اولیه Dependency Injection
   await di.init();
@@ -85,9 +106,10 @@ class MainApp extends StatelessWidget {
           '/': (context) => BlocBuilder<AuthBloc, AuthState>(
             builder: (context, state) {
               if (state is Authenticated) {
+
                 return MultiBlocProvider(
                   providers: [
-                    BlocProvider.value(value: di.sl<AuthBloc>()),
+                    BlocProvider.value(value: context.read<AuthBloc>()),
                     BlocProvider(create: (context) => di.sl<DashboardBloc>()),
                     BlocProvider(create: (context) => di.sl<UserBloc>()),
                     BlocProvider(create: (context) => di.sl<CustomerBloc>()),
@@ -107,29 +129,32 @@ class MainApp extends StatelessWidget {
             value: di.sl<UserBloc>(),
             child: const UserFormPage(),
           ),
-          '/customers': (context) => BlocProvider.value(
-            value: di.sl<CustomerBloc>(),
+          '/customers': (context) => BlocProvider(
+            create: (_) => di.sl<CustomerBloc>(),
             child: const CustomerListPage(),
           ),
-          '/customers/create': (context) => BlocProvider.value(
-            value: di.sl<CustomerBloc>(),
+          '/customers/create': (context) => BlocProvider(
+            create: (_) => di.sl<CustomerBloc>(),
             child: const CustomerFormPage(),
           ),
-          '/documents': (context) => BlocProvider.value(
-            value: di.sl<DocumentBloc>(),
+          '/documents': (context) => MultiBlocProvider(
+            providers: [
+              BlocProvider(create: (_) => di.sl<DocumentBloc>()),
+              BlocProvider(create: (_) => di.sl<CustomerBloc>()),
+            ],
             child: const DocumentListPage(),
           ),
           '/documents/create/invoice': (context) => MultiBlocProvider(
             providers: [
-              BlocProvider.value(value: di.sl<DocumentBloc>()),
-              BlocProvider.value(value: di.sl<CustomerBloc>()),
+              BlocProvider(create: (_) => di.sl<DocumentBloc>()),
+              BlocProvider(create: (_) => di.sl<CustomerBloc>()),
             ],
             child: const DocumentFormPage(initialType: DocumentType.invoice),
           ),
           '/documents/create/proforma': (context) => MultiBlocProvider(
             providers: [
-              BlocProvider.value(value: di.sl<DocumentBloc>()),
-              BlocProvider.value(value: di.sl<CustomerBloc>()),
+              BlocProvider(create: (_) => di.sl<DocumentBloc>()),
+              BlocProvider(create: (_) => di.sl<CustomerBloc>()),
             ],
             child: const DocumentFormPage(initialType: DocumentType.proforma),
           ),
@@ -154,16 +179,16 @@ class MainApp extends StatelessWidget {
           } else if (settings.name == '/customers/edit') {
             final customer = settings.arguments as dynamic;
             return MaterialPageRoute(
-              builder: (context) => BlocProvider.value(
-                value: di.sl<CustomerBloc>(),
+              builder: (context) => BlocProvider(
+                create: (_) => di.sl<CustomerBloc>(),
                 child: CustomerFormPage(customer: customer),
               ),
             );
           } else if (settings.name == '/customers/detail') {
             final customerId = settings.arguments as String;
             return MaterialPageRoute(
-              builder: (context) => BlocProvider.value(
-                value: di.sl<CustomerBloc>(),
+              builder: (context) => BlocProvider(
+                create: (_) => di.sl<CustomerBloc>(),
                 child: CustomerDetailPage(customerId: customerId),
               ),
             );
@@ -172,8 +197,8 @@ class MainApp extends StatelessWidget {
             return MaterialPageRoute(
               builder: (context) => MultiBlocProvider(
                 providers: [
-                  BlocProvider.value(value: di.sl<DocumentBloc>()),
-                  BlocProvider.value(value: di.sl<CustomerBloc>()),
+                  BlocProvider(create: (_) => di.sl<DocumentBloc>()),
+                  BlocProvider(create: (_) => di.sl<CustomerBloc>()),
                 ],
                 child: DocumentFormPage(
                   documentId: documentId,
@@ -186,8 +211,8 @@ class MainApp extends StatelessWidget {
             return MaterialPageRoute(
               builder: (context) => MultiBlocProvider(
                 providers: [
-                  BlocProvider.value(value: di.sl<DocumentBloc>()),
-                  BlocProvider.value(value: di.sl<CustomerBloc>()),
+                  BlocProvider(create: (_) => di.sl<DocumentBloc>()),
+                  BlocProvider(create: (_) => di.sl<CustomerBloc>()),
                 ],
                 child: DocumentPreviewPage(documentId: documentId),
               ),

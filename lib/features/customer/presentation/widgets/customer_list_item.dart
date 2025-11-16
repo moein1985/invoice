@@ -26,13 +26,13 @@ class CustomerListItem extends StatelessWidget {
         leading: CircleAvatar(
           backgroundColor: customer.isActive
               ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.surfaceVariant,
+              : Theme.of(context).colorScheme.surfaceContainerHighest,
           child: Text(
             customer.name.isNotEmpty ? customer.name[0] : '?',
             style: TextStyle(
-              color: customer.isActive
+                color: customer.isActive
                   ? Theme.of(context).colorScheme.onPrimary
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
+                  : Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),
@@ -83,8 +83,8 @@ class CustomerListItem extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: customer.isActive
-                    ? Colors.green.withOpacity(0.1)
-                    : Colors.red.withOpacity(0.1),
+                    ? Colors.green.withValues(alpha: 0.1)
+                    : Colors.red.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(

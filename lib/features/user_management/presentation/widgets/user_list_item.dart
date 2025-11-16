@@ -23,13 +23,13 @@ class UserListItem extends StatelessWidget {
         leading: CircleAvatar(
           backgroundColor: user.isActive
               ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.surfaceVariant,
+              : Theme.of(context).colorScheme.surfaceContainerHighest,
           child: Text(
             user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : '?',
             style: TextStyle(
-              color: user.isActive
+                color: user.isActive
                   ? Theme.of(context).colorScheme.onPrimary
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
+                  : Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),
@@ -54,13 +54,13 @@ class UserListItem extends StatelessWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // وضعیت کاربر
+            // User status
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: user.isActive
-                    ? Colors.green.withOpacity(0.1)
-                    : Colors.red.withOpacity(0.1),
+                    ? Colors.green.withValues(alpha: 0.1)
+                    : Colors.red.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(

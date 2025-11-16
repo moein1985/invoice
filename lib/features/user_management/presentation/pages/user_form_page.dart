@@ -157,7 +157,8 @@ class _UserFormPageState extends State<UserFormPage> {
 
                   // نقش کاربر
                   DropdownButtonFormField<String>(
-                    value: _selectedRole,
+                    key: ValueKey('role_$_selectedRole'),
+                    initialValue: _selectedRole,
                     decoration: const InputDecoration(
                       labelText: 'نقش',
                       border: OutlineInputBorder(),

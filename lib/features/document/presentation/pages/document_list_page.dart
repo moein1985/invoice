@@ -10,13 +10,14 @@ import '../../../../core/widgets/error_widget.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../customer/presentation/bloc/customer_bloc.dart';
 import '../bloc/document_bloc.dart';
 import '../bloc/document_event.dart';
 import '../bloc/document_state.dart';
 import 'document_form_page.dart';
 
 class DocumentListPage extends StatefulWidget {
-  const DocumentListPage({Key? key}) : super(key: key);
+  const DocumentListPage({super.key});
 
   @override
   State<DocumentListPage> createState() => _DocumentListPageState();
@@ -303,8 +304,11 @@ class _DocumentListPageState extends State<DocumentListPage> with SingleTickerPr
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => BlocProvider.value(
-          value: context.read<DocumentBloc>(),
+        builder: (_) => MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: context.read<DocumentBloc>()),
+            BlocProvider.value(value: context.read<CustomerBloc>()),
+          ],
           child: DocumentFormPage(
             documentId: documentId,
             initialType: type ?? DocumentType.invoice,

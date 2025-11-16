@@ -1,3 +1,4 @@
+
 import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
 import '../entities/dashboard_entity.dart';
@@ -9,6 +10,9 @@ class GetDashboardDataUseCase {
   GetDashboardDataUseCase(this.repository);
 
   Future<Either<Failure, DashboardEntity>> call(String userId) async {
-    return await repository.getDashboardData(userId);
+
+    final result = await repository.getDashboardData(userId);
+
+    return result;
   }
 }

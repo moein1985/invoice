@@ -45,7 +45,13 @@ class MonthlyChart extends StatelessWidget {
                   final maxRevenue = monthlyData
                       .map((e) => e.revenue)
                       .reduce((a, b) => a > b ? a : b);
-                  final height = (data.revenue / maxRevenue) * 150;
+                  
+                  // Handle zero or NaN values
+                  double height = 20; // minimum height
+                  if (maxRevenue > 0 && data.revenue > 0) {
+                    height = (data.revenue / maxRevenue) * 150;
+                    if (height < 20) height = 20; // ensure minimum visibility
+                  }
 
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -53,7 +59,9 @@ class MonthlyChart extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         Text(
-                          '${(data.revenue / 1000000).toStringAsFixed(1)}M',
+                          data.revenue == 0 
+                              ? '0' 
+                              : '${(data.revenue / 1000000).toStringAsFixed(1)}M',
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -64,7 +72,9 @@ class MonthlyChart extends StatelessWidget {
                           width: 40,
                           height: height,
                           decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor,
+                            color: data.revenue == 0 
+                                ? Colors.grey.shade300
+                                : Theme.of(context).primaryColor,
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),

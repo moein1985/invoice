@@ -52,7 +52,7 @@ final sl = GetIt.instance;
 Future<void> init() async {
   //! Features - Auth
   // Bloc
-  sl.registerFactory(
+  sl.registerLazySingleton(
     () => AuthBloc(
       loginUseCase: sl(),
       logoutUseCase: sl(),
@@ -98,7 +98,7 @@ Future<void> init() async {
 
   //! Features - User Management
   // Bloc
-  sl.registerFactory(
+  sl.registerLazySingleton(
     () => UserBloc(
       getUsersUseCase: sl(),
       createUserUseCase: sl(),

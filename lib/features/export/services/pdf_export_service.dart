@@ -4,10 +4,14 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../core/enums/document_type.dart';
+import '../../../core/enums/document_status.dart';
 import '../../document/domain/entities/document_entity.dart';
 import '../../customer/domain/entities/customer_entity.dart';
 
 class PdfExportService {
+  static const _regularFontPath = 'assets/fonts/Vazirmatn-Regular.ttf';
+  static const _boldFontPath = 'assets/fonts/Vazirmatn-Bold.ttf';
+
   /// تولید PDF از سند
   Future<File> generatePdf(
     DocumentEntity document,
@@ -16,13 +20,15 @@ class PdfExportService {
   ) async {
     final pdf = pw.Document();
 
-    // بارگذاری فونت فارسی (باید فونت TTF را در assets قرار دهید)
-    final ttf = await rootBundle.load('assets/fonts/Vazir-Regular.ttf');
-    final font = pw.Font.ttf(ttf);
+    // بارگذاری فونت‌های فارسی
+    final fonts = await _loadFonts();
 
     pdf.addPage(
       pw.Page(
-        theme: pw.ThemeData.withFont(base: font),
+        theme: pw.ThemeData.withFont(
+          base: fonts.base,
+          bold: fonts.bold,
+        ),
         pageFormat: PdfPageFormat.a4,
         textDirection: pw.TextDirection.rtl,
         build: (context) {
@@ -56,15 +62,17 @@ class PdfExportService {
     DocumentEntity document,
     CustomerEntity customer,
   ) async {
-    final ttf = await rootBundle.load('assets/fonts/Vazir-Regular.ttf');
-    final font = pw.Font.ttf(ttf);
+    final fonts = await _loadFonts();
 
     await Printing.layoutPdf(
       onLayout: (format) async {
         final pdf = pw.Document();
         pdf.addPage(
           pw.Page(
-            theme: pw.ThemeData.withFont(base: font),
+            theme: pw.ThemeData.withFont(
+              base: fonts.base,
+              bold: fonts.bold,
+            ),
             pageFormat: format,
             textDirection: pw.TextDirection.rtl,
             build: (context) {
@@ -90,6 +98,27 @@ class PdfExportService {
         return pdf.save();
       },
     );
+  }
+
+  Future<_PdfFonts> _loadFonts() async {
+    final base = await _tryLoadFont(
+      _regularFontPath,
+      fallback: pw.Font.helvetica(),
+    );
+    final bold = await _tryLoadFont(
+      _boldFontPath,
+      fallback: pw.Font.helveticaBold(),
+    );
+    return _PdfFonts(base: base, bold: bold);
+  }
+
+  Future<pw.Font> _tryLoadFont(String assetPath, {required pw.Font fallback}) async {
+    try {
+      final ttf = await rootBundle.load(assetPath);
+      return pw.Font.ttf(ttf);
+    } catch (_) {
+      return fallback;
+    }
   }
 
   pw.Widget _buildHeader(DocumentEntity document) {
@@ -174,7 +203,7 @@ class PdfExportService {
               _buildTableCell(_formatNumber(item.totalPrice)),
             ],
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -263,8 +292,15 @@ class PdfExportService {
         );
   }
 
-  String _getStatusText(status) {
+  String _getStatusText(DocumentStatus status) {
     // This will be replaced with proper enum handling
     return status.toString().split('.').last;
   }
+}
+
+class _PdfFonts {
+  final pw.Font base;
+  final pw.Font bold;
+
+  const _PdfFonts({required this.base, required this.bold});
 }

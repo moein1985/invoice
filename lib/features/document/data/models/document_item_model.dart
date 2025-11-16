@@ -5,49 +5,48 @@ part 'document_item_model.g.dart';
 
 @HiveType(typeId: 4)
 class DocumentItemModel extends DocumentItemEntity {
-  @HiveField(0)
-  final String id;
-
-  @HiveField(1)
-  final String productName;
-
-  @HiveField(2)
-  final int quantity;
-
-  @HiveField(3)
-  final double unitPrice;
-
-  @HiveField(4)
-  final double totalPrice;
-
-  @HiveField(5)
-  final double profitPercentage;
-
-  @HiveField(6)
-  final String supplier;
-
-  @HiveField(7)
-  final String? description;
-
   const DocumentItemModel({
-    required this.id,
-    required this.productName,
-    required this.quantity,
-    required this.unitPrice,
-    required this.totalPrice,
-    required this.profitPercentage,
-    required this.supplier,
-    this.description,
-  }) : super(
-          id: id,
-          productName: productName,
-          quantity: quantity,
-          unitPrice: unitPrice,
-          totalPrice: totalPrice,
-          profitPercentage: profitPercentage,
-          supplier: supplier,
-          description: description,
-        );
+    required super.id,
+    required super.productName,
+    required super.quantity,
+    required super.unitPrice,
+    required super.totalPrice,
+    required super.profitPercentage,
+    required super.supplier,
+    super.description,
+  });
+
+  @override
+  @HiveField(0)
+  String get id => super.id;
+
+  @override
+  @HiveField(1)
+  String get productName => super.productName;
+
+  @override
+  @HiveField(2)
+  int get quantity => super.quantity;
+
+  @override
+  @HiveField(3)
+  double get unitPrice => super.unitPrice;
+
+  @override
+  @HiveField(4)
+  double get totalPrice => super.totalPrice;
+
+  @override
+  @HiveField(5)
+  double get profitPercentage => super.profitPercentage;
+
+  @override
+  @HiveField(6)
+  String get supplier => super.supplier;
+
+  @override
+  @HiveField(7)
+  String? get description => super.description;
 
   factory DocumentItemModel.fromEntity(DocumentItemEntity entity) {
     return DocumentItemModel(
