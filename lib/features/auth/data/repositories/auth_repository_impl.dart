@@ -21,7 +21,7 @@ class AuthRepositoryImpl implements AuthRepository {
         username: username,
         password: password,
       );
-      return Right(user);
+      return Right(user.toEntity());
     } on AuthException catch (e) {
       return Left(AuthFailure(e.message));
     } on CacheException catch (e) {
@@ -47,7 +47,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, UserEntity?>> getCurrentUser() async {
     try {
       final user = await localDataSource.getCurrentUser();
-      return Right(user);
+      return Right(user?.toEntity());
     } on CacheException catch (e) {
 
       return Left(CacheFailure(e.message));

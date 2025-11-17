@@ -89,6 +89,7 @@ class DatabaseMigrationV2 {
           notes: oldDoc.notes,
           createdAt: oldDoc.createdAt,
           updatedAt: DateTime.now(),
+          approvalStatus: 'notRequired',
         );
         
         await box.add(newDoc);

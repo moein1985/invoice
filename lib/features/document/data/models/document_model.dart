@@ -1,6 +1,7 @@
 import 'package:hive/hive.dart';
 import '../../../../core/enums/document_type.dart';
 import '../../../../core/enums/document_status.dart';
+import '../../../../core/enums/approval_status.dart';
 import '../../domain/entities/document_entity.dart';
 import 'document_item_model.dart';
 
@@ -59,6 +60,21 @@ class DocumentModel {
   @HiveField(16)
   final String? convertedFromId;
 
+  @HiveField(17)
+  final String approvalStatus;
+
+  @HiveField(18)
+  final String? approvedBy;
+
+  @HiveField(19)
+  final DateTime? approvedAt;
+
+  @HiveField(20)
+  final String? rejectionReason;
+
+  @HiveField(21)
+  final bool requiresApproval;
+
   const DocumentModel({
     required this.id,
     required this.userId,
@@ -77,6 +93,11 @@ class DocumentModel {
     this.attachment,
     this.defaultProfitPercentage = 22.0,
     this.convertedFromId,
+    required this.approvalStatus,
+    this.approvedBy,
+    this.approvedAt,
+    this.rejectionReason,
+    this.requiresApproval = false,
   });
 
   static DocumentType _parseDocumentType(String type) {
@@ -141,6 +162,11 @@ class DocumentModel {
       attachment: entity.attachment,
       defaultProfitPercentage: entity.defaultProfitPercentage,
       convertedFromId: entity.convertedFromId,
+      approvalStatus: entity.approvalStatus.name,
+      approvedBy: entity.approvedBy,
+      approvedAt: entity.approvedAt,
+      rejectionReason: entity.rejectionReason,
+      requiresApproval: entity.requiresApproval,
     );
   }
 
@@ -163,6 +189,11 @@ class DocumentModel {
       notes: notes,
       createdAt: createdAt,
       updatedAt: updatedAt,
+      approvalStatus: ApprovalStatus.values.byName(approvalStatus),
+      approvedBy: approvedBy,
+      approvedAt: approvedAt,
+      rejectionReason: rejectionReason,
+      requiresApproval: requiresApproval,
     );
   }
 }

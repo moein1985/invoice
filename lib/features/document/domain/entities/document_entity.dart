@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
 import '../../../../core/enums/document_type.dart';
 import '../../../../core/enums/document_status.dart';
+import '../../../../core/enums/approval_status.dart';
+import '../../../../features/auth/domain/entities/user_entity.dart';
 import 'document_item_entity.dart';
 
 class DocumentEntity extends Equatable {
@@ -21,6 +23,11 @@ class DocumentEntity extends Equatable {
   final String? convertedFromId; // ID سند منبع که این سند از آن تبدیل شده
   final DateTime createdAt;
   final DateTime updatedAt;
+  final ApprovalStatus approvalStatus;
+  final String? approvedBy;           // ID کاربری که تأیید کرده
+  final DateTime? approvedAt;
+  final String? rejectionReason;
+  final bool requiresApproval;        // آیا نیاز به تأیید دارد؟
 
   const DocumentEntity({
     required this.id,
@@ -40,6 +47,11 @@ class DocumentEntity extends Equatable {
     this.convertedFromId,
     required this.createdAt,
     required this.updatedAt,
+    required this.approvalStatus,
+    this.approvedBy,
+    this.approvedAt,
+    this.rejectionReason,
+    this.requiresApproval = false,
   });
 
   @override
@@ -61,6 +73,11 @@ class DocumentEntity extends Equatable {
         convertedFromId,
         createdAt,
         updatedAt,
+        approvalStatus,
+        approvedBy,
+        approvedAt,
+        rejectionReason,
+        requiresApproval,
       ];
 
   /// محاسبه جمع کل خرید
@@ -91,6 +108,11 @@ class DocumentEntity extends Equatable {
     String? convertedFromId,
     DateTime? createdAt,
     DateTime? updatedAt,
+    ApprovalStatus? approvalStatus,
+    String? approvedBy,
+    DateTime? approvedAt,
+    String? rejectionReason,
+    bool? requiresApproval,
   }) {
     return DocumentEntity(
       id: id ?? this.id,
@@ -110,6 +132,11 @@ class DocumentEntity extends Equatable {
       convertedFromId: convertedFromId ?? this.convertedFromId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      approvalStatus: approvalStatus ?? this.approvalStatus,
+      approvedBy: approvedBy ?? this.approvedBy,
+      approvedAt: approvedAt ?? this.approvedAt,
+      rejectionReason: rejectionReason ?? this.rejectionReason,
+      requiresApproval: requiresApproval ?? this.requiresApproval,
     );
   }
 
@@ -147,6 +174,11 @@ class DocumentEntity extends Equatable {
       'convertedFromId': convertedFromId,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      'approvalStatus': approvalStatus.name,
+      'approvedBy': approvedBy,
+      'approvedAt': approvedAt?.toIso8601String(),
+      'rejectionReason': rejectionReason,
+      'requiresApproval': requiresApproval,
     };
   }
 
@@ -187,6 +219,26 @@ class DocumentEntity extends Equatable {
       convertedFromId: json['convertedFromId'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
+      approvalStatus: ApprovalStatus.values.byName(
+        json['approvalStatus'] as String? ?? 'notRequired'
+      ),
+      approvedBy: json['approvedBy'] as String?,
+      approvedAt: json['approvedAt'] != null 
+        ? DateTime.parse(json['approvedAt'] as String) 
+        : null,
+      rejectionReason: json['rejectionReason'] as String?,
+      requiresApproval: json['requiresApproval'] as bool? ?? false,
     );
+  }
+
+  /// متد کمکی برای چک کردن قابلیت تبدیل:
+  bool canConvert(UserEntity user) {
+    if (!requiresApproval) return true;
+    if (approvalStatus == ApprovalStatus.approved) return true;
+    
+    // اگر کاربر سطح دسترسی بالایی دارد، نیاز به تأیید ندارد
+    if (user.role.canApprove(totalAmount)) return true;
+    
+    return false;
   }
 }

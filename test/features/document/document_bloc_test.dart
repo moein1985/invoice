@@ -13,6 +13,7 @@ import 'package:invoice/features/document/domain/usecases/search_documents_useca
 import 'package:invoice/features/document/domain/usecases/convert_proforma_to_invoice_usecase.dart';
 import 'package:invoice/features/document/domain/usecases/convert_document_usecase.dart';
 import 'package:invoice/features/document/domain/entities/document_entity.dart';
+import 'package:invoice/core/enums/approval_status.dart';
 import 'package:invoice/features/document/domain/entities/document_item_entity.dart';
 import 'package:invoice/core/enums/document_type.dart' as dt;
 import 'package:invoice/core/enums/document_status.dart' as ds;
@@ -70,6 +71,7 @@ void main() {
       notes: null,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      approvalStatus: ApprovalStatus.notRequired,
     );
 
     when(() => mockGetDocuments('u1')).thenAnswer((_) async => Right([doc]));
@@ -96,6 +98,7 @@ void main() {
       notes: null,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      approvalStatus: ApprovalStatus.notRequired,
     );
 
     when(() => mockCreateDocument(doc)).thenAnswer((_) async => Right(doc));
@@ -122,11 +125,12 @@ void main() {
       notes: null,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      approvalStatus: ApprovalStatus.notRequired,
     );
 
     when(() => mockConvertProforma('p1')).thenAnswer((_) async => Right(invoice));
 
-    final expected = [const DocumentLoading(), DocumentConverted(invoice)];
+    final expected = [const DocumentLoading(), DocumentConverted(invoice, fromType: dt.DocumentType.proforma, toType: dt.DocumentType.invoice)];
     expectLater(bloc.stream, emitsInOrder(expected));
 
     bloc.add(const ConvertToInvoice('p1'));

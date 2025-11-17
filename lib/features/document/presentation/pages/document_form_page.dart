@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/enums/document_type.dart';
 import '../../../../core/enums/document_status.dart';
+import '../../../../core/enums/approval_status.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/custom_text_field.dart';
@@ -608,6 +609,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
       defaultProfitPercentage: defaultProfit,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      approvalStatus: ApprovalStatus.notRequired,
     );
 
     if (widget.documentId == null) {

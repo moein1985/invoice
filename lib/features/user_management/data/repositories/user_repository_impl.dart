@@ -14,7 +14,7 @@ class UserRepositoryImpl implements UserRepository {
   Future<Either<Failure, List<UserEntity>>> getUsers() async {
     try {
       final users = await localDataSource.getUsers();
-      return Right(users);
+      return Right(users.map((user) => user.toEntity()).toList());
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {
@@ -26,7 +26,7 @@ class UserRepositoryImpl implements UserRepository {
   Future<Either<Failure, UserEntity>> getUserById(String id) async {
     try {
       final user = await localDataSource.getUserById(id);
-      return Right(user);
+      return Right(user.toEntity());
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {
@@ -48,7 +48,7 @@ class UserRepositoryImpl implements UserRepository {
         fullName: fullName,
         role: role,
       );
-      return Right(user);
+      return Right(user.toEntity());
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {
@@ -74,7 +74,7 @@ class UserRepositoryImpl implements UserRepository {
         role: role,
         isActive: isActive,
       );
-      return Right(user);
+      return Right(user.toEntity());
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {
@@ -98,7 +98,7 @@ class UserRepositoryImpl implements UserRepository {
   Future<Either<Failure, List<UserEntity>>> searchUsers(String query) async {
     try {
       final users = await localDataSource.searchUsers(query);
-      return Right(users);
+      return Right(users.map((user) => user.toEntity()).toList());
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {
@@ -110,7 +110,7 @@ class UserRepositoryImpl implements UserRepository {
   Future<Either<Failure, UserEntity>> toggleUserStatus(String id) async {
     try {
       final user = await localDataSource.toggleUserStatus(id);
-      return Right(user);
+      return Right(user.toEntity());
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {

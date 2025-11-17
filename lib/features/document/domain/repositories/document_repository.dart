@@ -16,6 +16,9 @@ abstract class DocumentRepository {
   /// دریافت تمام اسناد یک کاربر
   Future<Either<Failure, List<DocumentEntity>>> getDocuments(String userId);
 
+  /// دریافت تمام اسناد (برای سرپرست)
+  Future<Either<Failure, List<DocumentEntity>>> getAllDocuments();
+
   /// دریافت یک سند با ID
   Future<Either<Failure, DocumentEntity>> getDocumentById(String documentId);
 

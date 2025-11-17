@@ -1,52 +1,73 @@
 import 'package:hive/hive.dart';
 import '../../domain/entities/user_entity.dart';
+import '../../../../core/enums/user_role.dart';
 
 part 'user_model.g.dart';
 
 @HiveType(typeId: 0)
-class UserModel extends UserEntity {
+class UserModel {
+  @HiveField(0)
+  final String id;
+
+  @HiveField(1)
+  final String username;
+
+  @HiveField(2)
+  final String password;
+
+  @HiveField(3)
+  final String fullName;
+
+  @HiveField(4)
+  final String role; // ذخیره به صورت String
+
+  @HiveField(5)
+  final bool isActive;
+
+  @HiveField(6)
+  final DateTime createdAt;
+
+  @HiveField(7)
+  final DateTime? lastLogin;
+
   const UserModel({
-    required super.id,
-    required super.username,
-    required super.password,
-    required super.fullName,
-    required super.role,
-    required super.isActive,
-    required super.createdAt,
-    super.lastLogin,
+    required this.id,
+    required this.username,
+    required this.password,
+    required this.fullName,
+    required this.role,
+    required this.isActive,
+    required this.createdAt,
+    this.lastLogin,
   });
 
-  @override
-  @HiveField(0)
-  String get id => super.id;
+  /// تبدیل از Entity
+  static UserModel fromEntity(UserEntity entity) {
+    return UserModel(
+      id: entity.id,
+      username: entity.username,
+      password: entity.password,
+      fullName: entity.fullName,
+      role: entity.role.name, // تبدیل enum به string
+      isActive: entity.isActive,
+      createdAt: entity.createdAt,
+      lastLogin: entity.lastLogin,
+    );
+  }
 
-  @override
-  @HiveField(1)
-  String get username => super.username;
-
-  @override
-  @HiveField(2)
-  String get password => super.password;
-
-  @override
-  @HiveField(3)
-  String get fullName => super.fullName;
-
-  @override
-  @HiveField(4)
-  String get role => super.role;
-
-  @override
-  @HiveField(5)
-  bool get isActive => super.isActive;
-
-  @override
-  @HiveField(6)
-  DateTime get createdAt => super.createdAt;
-
-  @override
-  @HiveField(7)
-  DateTime? get lastLogin => super.lastLogin;
+  /// تبدیل به Entity
+  UserEntity toEntity() {
+    return UserEntity(
+      id: id,
+      username: username,
+      password: password,
+      fullName: fullName,
+      role: UserRole.values.byName(role), // تبدیل string به enum
+      isActive: isActive,
+      createdAt: createdAt,
+      lastLogin: lastLogin,
+    );
+  }
 
   /// تبدیل از JSON
   factory UserModel.fromJson(Map<String, dynamic> json) {

@@ -34,13 +34,18 @@ class DocumentModelAdapter extends TypeAdapter<DocumentModel> {
       attachment: fields[14] as String?,
       defaultProfitPercentage: fields[15] as double,
       convertedFromId: fields[16] as String?,
+      approvalStatus: fields[17] as String,
+      approvedBy: fields[18] as String?,
+      approvedAt: fields[19] as DateTime?,
+      rejectionReason: fields[20] as String?,
+      requiresApproval: fields[21] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, DocumentModel obj) {
     writer
-      ..writeByte(17)
+      ..writeByte(22)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -74,7 +79,17 @@ class DocumentModelAdapter extends TypeAdapter<DocumentModel> {
       ..writeByte(15)
       ..write(obj.defaultProfitPercentage)
       ..writeByte(16)
-      ..write(obj.convertedFromId);
+      ..write(obj.convertedFromId)
+      ..writeByte(17)
+      ..write(obj.approvalStatus)
+      ..writeByte(18)
+      ..write(obj.approvedBy)
+      ..writeByte(19)
+      ..write(obj.approvedAt)
+      ..writeByte(20)
+      ..write(obj.rejectionReason)
+      ..writeByte(21)
+      ..write(obj.requiresApproval);
   }
 
   @override

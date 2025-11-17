@@ -7,6 +7,7 @@ import 'package:invoice/features/auth/domain/usecases/login_usecase.dart';
 import 'package:invoice/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:invoice/features/auth/domain/usecases/get_current_user_usecase.dart';
 import 'package:invoice/features/auth/domain/entities/user_entity.dart';
+import 'package:invoice/core/enums/user_role.dart';
 import 'package:dartz/dartz.dart';
 
 class MockLoginUseCase extends Mock implements LoginUseCase {}
@@ -27,7 +28,7 @@ void main() {
   });
 
   test('emits [AuthLoading, Authenticated] when login succeeds', () async {
-    final user = UserEntity(id: 'u1', username: 'a', password: '', fullName: 'A', role: 'user', isActive: true, createdAt: DateTime.now());
+    final user = UserEntity(id: 'u1', username: 'a', password: '', fullName: 'A', role: UserRole.employee, isActive: true, createdAt: DateTime.now());
     when(() => mockLogin(username: any(named: 'username'), password: any(named: 'password'))).thenAnswer((_) async => Right(user));
 
     final expected = [const AuthLoading(), Authenticated(user)];

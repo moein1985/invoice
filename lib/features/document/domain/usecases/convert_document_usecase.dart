@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/enums/document_type.dart';
+import '../../../../core/enums/approval_status.dart';
 import '../entities/document_entity.dart';
 import '../repositories/document_repository.dart';
 import 'get_next_document_number_usecase.dart';
@@ -59,9 +60,10 @@ class ConvertDocumentUseCase {
         notes: document.notes,
         attachment: document.attachment,
         defaultProfitPercentage: document.defaultProfitPercentage,
-        convertedFromId: document.id, // ثبت ID سند منبع
+        convertedFromId: document.id, // ثبت ID سند منبع که این سند از آن تبدیل شده
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        approvalStatus: ApprovalStatus.notRequired,
       );
 
       // ذخیره سند جدید

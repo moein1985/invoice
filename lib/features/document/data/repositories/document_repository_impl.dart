@@ -67,6 +67,18 @@ class DocumentRepositoryImpl implements DocumentRepository {
   }
 
   @override
+  Future<Either<Failure, List<DocumentEntity>>> getAllDocuments() async {
+    try {
+      final documents = await localDataSource.getAllDocuments();
+      return Right(documents.map((model) => model.toEntity()).toList());
+    } on CacheException catch (e) {
+      return Left(CacheFailure(e.message));
+    } catch (e) {
+      return Left(CacheFailure('خطای غیرمنتظره: ${e.toString()}'));
+    }
+  }
+
+  @override
   Future<Either<Failure, DocumentEntity>> getDocumentById(String documentId) async {
     try {
       final document = await localDataSource.getDocumentById(documentId);

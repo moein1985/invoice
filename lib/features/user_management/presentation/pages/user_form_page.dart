@@ -33,7 +33,7 @@ class _UserFormPageState extends State<UserFormPage> {
     if (_isEditing) {
       _usernameController.text = widget.user!.username;
       _fullNameController.text = widget.user!.fullName;
-      _selectedRole = widget.user!.role;
+      _selectedRole = widget.user!.role.name;
       _isActive = widget.user!.isActive;
     }
   }

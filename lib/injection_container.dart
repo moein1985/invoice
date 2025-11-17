@@ -31,9 +31,6 @@ import 'features/customer/domain/usecases/search_customers_usecase.dart';
 import 'features/customer/domain/usecases/toggle_customer_status_usecase.dart';
 import 'features/customer/domain/usecases/update_customer_usecase.dart';
 import 'features/customer/presentation/bloc/customer_bloc.dart';
-import 'features/document/data/datasources/document_local_datasource.dart';
-import 'features/document/data/repositories/document_repository_impl.dart';
-import 'features/document/domain/repositories/document_repository.dart';
 import 'features/document/domain/usecases/create_document_usecase.dart';
 import 'features/document/domain/usecases/update_document_usecase.dart';
 import 'features/document/domain/usecases/delete_document_usecase.dart';
@@ -43,7 +40,15 @@ import 'features/document/domain/usecases/search_documents_usecase.dart';
 import 'features/document/domain/usecases/convert_proforma_to_invoice_usecase.dart';
 import 'features/document/domain/usecases/convert_document_usecase.dart';
 import 'features/document/domain/usecases/get_next_document_number_usecase.dart';
+import 'features/document/domain/usecases/request_approval_usecase.dart';
+import 'features/document/domain/usecases/approve_document_usecase.dart';
+import 'features/document/domain/usecases/reject_document_usecase.dart';
+import 'features/document/domain/usecases/get_pending_approvals_usecase.dart';
 import 'features/document/presentation/bloc/document_bloc.dart';
+import 'features/document/presentation/bloc/approval_bloc.dart';
+import 'features/document/domain/repositories/document_repository.dart';
+import 'features/document/data/repositories/document_repository_impl.dart';
+import 'features/document/data/datasources/document_local_datasource.dart';
 import 'features/export/services/pdf_export_service.dart';
 import 'features/export/services/excel_export_service.dart';
 
@@ -179,6 +184,17 @@ Future<void> init() async {
     ),
   );
 
+  // Approval Bloc
+  sl.registerFactory(
+    () => ApprovalBloc(
+      getPendingApprovals: sl(),
+      approveDocument: sl(),
+      rejectDocument: sl(),
+      requestApproval: sl(),
+      authRepository: sl(),
+    ),
+  );
+
   // Use cases
   sl.registerLazySingleton(() => GetDocumentsUseCase(sl()));
   sl.registerLazySingleton(() => GetDocumentByIdUseCase(sl()));
@@ -189,6 +205,10 @@ Future<void> init() async {
   sl.registerLazySingleton(() => ConvertProformaToInvoiceUseCase(sl()));
   sl.registerLazySingleton(() => ConvertDocumentUseCase(sl(), sl()));
   sl.registerLazySingleton(() => GetNextDocumentNumberUseCase(sl()));
+  sl.registerLazySingleton(() => RequestApprovalUseCase(sl()));
+  sl.registerLazySingleton(() => ApproveDocumentUseCase(sl()));
+  sl.registerLazySingleton(() => RejectDocumentUseCase(sl()));
+  sl.registerLazySingleton(() => GetPendingApprovalsUseCase(sl()));
 
   // Repository
   sl.registerLazySingleton<DocumentRepository>(

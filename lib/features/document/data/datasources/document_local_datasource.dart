@@ -9,6 +9,7 @@ abstract class DocumentLocalDataSource {
   Future<DocumentModel> updateDocument(DocumentModel document);
   Future<void> deleteDocument(String documentId);
   Future<List<DocumentModel>> getDocuments(String userId);
+  Future<List<DocumentModel>> getAllDocuments();
   Future<DocumentModel> getDocumentById(String documentId);
   Future<List<DocumentModel>> searchDocuments({
     required String userId,
@@ -67,6 +68,18 @@ class DocumentLocalDataSourceImpl implements DocumentLocalDataSource {
   Future<List<DocumentModel>> getDocuments(String userId) async {
     try {
       final documents = _box.values.where((doc) => doc.userId == userId).toList();
+      // مرتب‌سازی بر اساس تاریخ (جدیدترین اول)
+      documents.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return documents;
+    } catch (e) {
+      throw CacheException('خطا در دریافت اسناد: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<List<DocumentModel>> getAllDocuments() async {
+    try {
+      final documents = _box.values.toList();
       // مرتب‌سازی بر اساس تاریخ (جدیدترین اول)
       documents.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return documents;
@@ -165,6 +178,14 @@ class DocumentLocalDataSourceImpl implements DocumentLocalDataSource {
         notes: proforma.notes,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        attachment: proforma.attachment,
+        defaultProfitPercentage: proforma.defaultProfitPercentage,
+        convertedFromId: proformaId,
+        approvalStatus: proforma.approvalStatus,
+        approvedBy: proforma.approvedBy,
+        approvedAt: proforma.approvedAt,
+        rejectionReason: proforma.rejectionReason,
+        requiresApproval: proforma.requiresApproval,
       );
 
       await createDocument(invoice);

@@ -44,7 +44,7 @@ class UserListItem extends StatelessWidget {
           children: [
             Text(user.username),
             Text(
-              user.role,
+              user.role.persianName,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).colorScheme.primary,
                   ),
