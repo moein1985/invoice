@@ -35,9 +35,11 @@ void main() {
         id: 'i1',
         productName: 'P',
         quantity: 1,
-        unitPrice: 10.0,
+        unit: 'عدد',
+        purchasePrice: 8.0,
+        sellPrice: 10.0,
         totalPrice: 10.0,
-        profitPercentage: 0.0,
+        profitPercentage: 25.0,
         supplier: 'S',
       );
 
@@ -68,13 +70,15 @@ void main() {
       expect(next, equals('INV-1001'));
 
       final item = DocumentItemModel(
-        id: 'i2',
-        productName: 'X',
+        id: 'i1',
+        productName: 'item',
         quantity: 1,
-        unitPrice: 5,
+        unit: 'عدد',
+        purchasePrice: 4,
+        sellPrice: 5,
         totalPrice: 5,
-        profitPercentage: 0,
-        supplier: 'S',
+        profitPercentage: 25,
+        supplier: 'supp',
       );
 
       final doc = DocumentModel(
@@ -101,12 +105,14 @@ void main() {
 
     test('searchDocuments filters by query and type', () async {
       final item = DocumentItemModel(
-        id: 'i3',
-        productName: 'Widget',
+        id: 'i1',
+        productName: 'Item',
         quantity: 1,
-        unitPrice: 1,
+        unit: 'عدد',
+        purchasePrice: 0.8,
+        sellPrice: 1,
         totalPrice: 1,
-        profitPercentage: 0,
+        profitPercentage: 25,
         supplier: 'Sup',
       );
 
@@ -138,13 +144,15 @@ void main() {
 
     test('convertProformaToInvoice creates invoice', () async {
       final item = DocumentItemModel(
-        id: 'i4',
-        productName: 'Prod',
+        id: 'i1',
+        productName: 'Item',
         quantity: 1,
-        unitPrice: 2,
+        unit: 'عدد',
+        purchasePrice: 1.6,
+        sellPrice: 2,
         totalPrice: 2,
-        profitPercentage: 0,
-        supplier: 'S',
+        profitPercentage: 25,
+        supplier: 'Sup',
       );
 
       final pro = DocumentModel(

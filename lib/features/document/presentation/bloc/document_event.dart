@@ -79,6 +79,16 @@ class ConvertToInvoice extends DocumentEvent {
   List<Object?> get props => [proformaId];
 }
 
+/// تبدیل سند به مرحله بعدی (tempProforma → proforma → invoice)
+class ConvertDocument extends DocumentEvent {
+  final String documentId;
+  
+  const ConvertDocument(this.documentId);
+  
+  @override
+  List<Object?> get props => [documentId];
+}
+
 /// دریافت یک سند
 class LoadDocumentById extends DocumentEvent {
   final String documentId;

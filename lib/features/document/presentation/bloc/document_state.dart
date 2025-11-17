@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../../core/enums/document_type.dart';
 import '../../domain/entities/document_entity.dart';
 
 abstract class DocumentState extends Equatable {
@@ -63,14 +64,16 @@ class DocumentDeleted extends DocumentState {
   const DocumentDeleted();
 }
 
-/// پیش‌فاکتور به فاکتور تبدیل شد
+/// سند تبدیل شد
 class DocumentConverted extends DocumentState {
-  final DocumentEntity invoice;
+  final DocumentEntity convertedDocument;
+  final DocumentType fromType;
+  final DocumentType toType;
   
-  const DocumentConverted(this.invoice);
+  const DocumentConverted(this.convertedDocument, {required this.fromType, required this.toType});
   
   @override
-  List<Object?> get props => [invoice];
+  List<Object?> get props => [convertedDocument, fromType, toType];
 }
 
 /// خطا

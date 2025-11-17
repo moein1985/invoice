@@ -39,29 +39,65 @@ class ExcelExportService {
     }
     sheet.appendRow([]);
 
-    sheet.appendRow(_row(['ردیف', 'محصول', 'تعداد', 'قیمت واحد', 'مبلغ کل']));
+    final showInternal = document.documentType.showInternalDetails;
+    
+    // هدر جدول
+    if (showInternal) {
+      sheet.appendRow(_row(['ردیف', 'محصول', 'تعداد', 'واحد', 'قیمت خرید', 'درصد سود', 'قیمت فروش', 'سود', 'مبلغ کل']));
+    } else {
+      sheet.appendRow(_row(['ردیف', 'محصول', 'تعداد', 'واحد', 'قیمت فروش', 'مبلغ کل']));
+    }
+    
+    // آیتم‌ها
     for (int i = 0; i < document.items.length; i++) {
       final item = document.items[i];
-      sheet.appendRow(_row([
-        i + 1,
-        item.productName,
-        item.quantity,
-        item.unitPrice,
-        item.totalPrice,
-      ]));
+      if (showInternal) {
+        sheet.appendRow(_row([
+          i + 1,
+          item.productName,
+          item.quantity,
+          item.unit,
+          item.purchasePrice,
+          '${item.profitPercentage.toStringAsFixed(1)}%',
+          item.sellPrice,
+          item.profitAmount,
+          item.totalPrice,
+        ]));
+      } else {
+        sheet.appendRow(_row([
+          i + 1,
+          item.productName,
+          item.quantity,
+          item.unit,
+          item.sellPrice,
+          item.totalPrice,
+        ]));
+      }
     }
     sheet.appendRow([]);
 
-    sheet.appendRow(_row(['جمع کل', document.totalAmount]));
+    // جمع‌ها
+    if (showInternal) {
+      sheet.appendRow(_row(['جمع کل خرید', document.totalPurchaseAmount]));
+      sheet.appendRow(_row(['جمع سود', document.totalProfitAmount]));
+    }
+    sheet.appendRow(_row(['جمع کل فروش', document.totalAmount]));
     if (document.discount > 0) {
       sheet.appendRow(_row(['تخفیف', document.discount]));
     }
     sheet.appendRow(_row(['مبلغ قابل پرداخت', document.finalAmount]));
 
+    // یادداشت و پیوست
     if (document.notes != null) {
       sheet.appendRow([]);
       sheet.appendRow(_row(['یادداشت']));
       sheet.appendRow(_row([document.notes!]));
+    }
+    
+    if (document.attachment != null) {
+      sheet.appendRow([]);
+      sheet.appendRow(_row(['پیوست']));
+      sheet.appendRow(_row([document.attachment!]));
     }
 
     final fileBytes = excel.encode();

@@ -16,6 +16,9 @@ class DocumentEntity extends Equatable {
   final double finalAmount;
   final DocumentStatus status;
   final String? notes;
+  final String? attachment; // پیوست
+  final double defaultProfitPercentage; // درصد سود پیش‌فرض
+  final String? convertedFromId; // ID سند منبع که این سند از آن تبدیل شده
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -32,6 +35,9 @@ class DocumentEntity extends Equatable {
     required this.finalAmount,
     required this.status,
     this.notes,
+    this.attachment,
+    this.defaultProfitPercentage = 22.0, // پیش‌فرض 22%
+    this.convertedFromId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -50,9 +56,22 @@ class DocumentEntity extends Equatable {
         finalAmount,
         status,
         notes,
+        attachment,
+        defaultProfitPercentage,
+        convertedFromId,
         createdAt,
         updatedAt,
       ];
+
+  /// محاسبه جمع کل خرید
+  double get totalPurchaseAmount {
+    return items.fold(0.0, (sum, item) => sum + item.totalPurchasePrice);
+  }
+
+  /// محاسبه جمع سود
+  double get totalProfitAmount {
+    return items.fold(0.0, (sum, item) => sum + item.profitAmount);
+  }
 
   DocumentEntity copyWith({
     String? id,
@@ -67,6 +86,9 @@ class DocumentEntity extends Equatable {
     double? finalAmount,
     DocumentStatus? status,
     String? notes,
+    String? attachment,
+    double? defaultProfitPercentage,
+    String? convertedFromId,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -83,6 +105,9 @@ class DocumentEntity extends Equatable {
       finalAmount: finalAmount ?? this.finalAmount,
       status: status ?? this.status,
       notes: notes ?? this.notes,
+      attachment: attachment ?? this.attachment,
+      defaultProfitPercentage: defaultProfitPercentage ?? this.defaultProfitPercentage,
+      convertedFromId: convertedFromId ?? this.convertedFromId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -93,7 +118,18 @@ class DocumentEntity extends Equatable {
       'id': id,
       'userId': userId,
       'documentNumber': documentNumber,
-      'documentType': documentType == DocumentType.invoice ? 'invoice' : 'proforma',
+      'documentType': () {
+        switch (documentType) {
+          case DocumentType.tempProforma:
+            return 'tempProforma';
+          case DocumentType.proforma:
+            return 'proforma';
+          case DocumentType.invoice:
+            return 'invoice';
+          case DocumentType.returnInvoice:
+            return 'returnInvoice';
+        }
+      }(),
       'customerId': customerId,
       'documentDate': documentDate.toIso8601String(),
       'items': items.map((item) => item.toJson()).toList(),
@@ -106,6 +142,9 @@ class DocumentEntity extends Equatable {
               ? 'unpaid'
               : 'pending',
       'notes': notes,
+      'attachment': attachment,
+      'defaultProfitPercentage': defaultProfitPercentage,
+      'convertedFromId': convertedFromId,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -116,7 +155,21 @@ class DocumentEntity extends Equatable {
       id: json['id'] as String,
       userId: json['userId'] as String,
       documentNumber: json['documentNumber'] as String,
-      documentType: json['documentType'] == 'invoice' ? DocumentType.invoice : DocumentType.proforma,
+      documentType: () {
+        final t = json['documentType'] as String;
+        switch (t) {
+          case 'tempProforma':
+            return DocumentType.tempProforma;
+          case 'proforma':
+            return DocumentType.proforma;
+          case 'invoice':
+            return DocumentType.invoice;
+          case 'returnInvoice':
+            return DocumentType.returnInvoice;
+          default:
+            return DocumentType.proforma; // fallback
+        }
+      }(),
       customerId: json['customerId'] as String,
       documentDate: DateTime.parse(json['documentDate'] as String),
       items: (json['items'] as List).map((item) => DocumentItemEntity.fromJson(item as Map<String, dynamic>)).toList(),
@@ -129,6 +182,9 @@ class DocumentEntity extends Equatable {
               ? DocumentStatus.unpaid
               : DocumentStatus.pending,
       notes: json['notes'] as String?,
+      attachment: json['attachment'] as String?,
+      defaultProfitPercentage: (json['defaultProfitPercentage'] as num?)?.toDouble() ?? 22.0,
+      convertedFromId: json['convertedFromId'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );

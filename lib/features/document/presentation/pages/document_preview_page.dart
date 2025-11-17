@@ -20,6 +20,7 @@ import '../../domain/entities/document_entity.dart';
 import '../bloc/document_bloc.dart';
 import '../bloc/document_state.dart';
 import '../bloc/document_event.dart';
+import '../../domain/usecases/convert_document_usecase.dart';
 import '../../../export/services/pdf_export_service.dart';
 import '../../../export/services/excel_export_service.dart';
 
@@ -70,6 +71,13 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
               });
             },
           ),
+          // دکمه تبدیل
+          if (_document != null && _document!.documentType.nextType != null)
+            IconButton(
+              icon: const Icon(Icons.arrow_forward),
+              tooltip: _document!.documentType.convertButtonText,
+              onPressed: _convertDocument,
+            ),
           IconButton(
             icon: const Icon(Icons.picture_as_pdf),
             tooltip: 'خروجی PDF',
@@ -173,7 +181,7 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
               _buildItemsTable(),
               const SizedBox(height: 24),
               _buildTotals(),
-              if (_document!.notes != null) ...[
+              if (_document!.notes != null || _document!.attachment != null) ...[
                 const SizedBox(height: 24),
                 _buildNotes(),
               ],
@@ -277,6 +285,8 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
   }
 
   Widget _buildItemsTable() {
+    final showInternal = _document!.documentType.showInternalDetails;
+    
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -288,40 +298,62 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            Table(
-              border: TableBorder.all(color: Colors.grey.shade300),
-              columnWidths: const {
-                0: FlexColumnWidth(0.5),
-                1: FlexColumnWidth(2),
-                2: FlexColumnWidth(1),
-                3: FlexColumnWidth(1.5),
-                4: FlexColumnWidth(1.5),
-              },
-              children: [
-                TableRow(
-                  decoration: BoxDecoration(color: Colors.grey.shade100),
-                  children: [
-                    _buildTableHeader('ردیف'),
-                    _buildTableHeader('محصول'),
-                    _buildTableHeader('تعداد'),
-                    _buildTableHeader('قیمت واحد'),
-                    _buildTableHeader('مبلغ کل'),
-                  ],
-                ),
-                ..._document!.items.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final item = entry.value;
-                  return TableRow(
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Table(
+                border: TableBorder.all(color: Colors.grey.shade300),
+                columnWidths: showInternal ? const {
+                  0: FixedColumnWidth(50),
+                  1: FixedColumnWidth(150),
+                  2: FixedColumnWidth(80),
+                  3: FixedColumnWidth(80),
+                  4: FixedColumnWidth(100),
+                  5: FixedColumnWidth(80),
+                  6: FixedColumnWidth(100),
+                  7: FixedColumnWidth(100),
+                  8: FixedColumnWidth(100),
+                } : const {
+                  0: FixedColumnWidth(50),
+                  1: FixedColumnWidth(200),
+                  2: FixedColumnWidth(80),
+                  3: FixedColumnWidth(80),
+                  4: FixedColumnWidth(120),
+                  5: FixedColumnWidth(120),
+                },
+                children: [
+                  TableRow(
+                    decoration: BoxDecoration(color: Colors.grey.shade100),
                     children: [
-                      _buildTableCell((index + 1).toString()),
-                      _buildTableCell(item.productName),
-                      _buildTableCell(item.quantity.toString()),
-                      _buildTableCell(NumberFormatter.formatWithComma(item.unitPrice)),
-                      _buildTableCell(NumberFormatter.formatWithComma(item.totalPrice)),
+                      _buildTableHeader('ردیف'),
+                      _buildTableHeader('محصول'),
+                      _buildTableHeader('تعداد'),
+                      _buildTableHeader('واحد'),
+                      if (showInternal) _buildTableHeader('قیمت خرید'),
+                      if (showInternal) _buildTableHeader('درصد سود'),
+                      _buildTableHeader('قیمت فروش'),
+                      if (showInternal) _buildTableHeader('سود'),
+                      _buildTableHeader('مبلغ کل'),
                     ],
-                  );
-                }),
-              ],
+                  ),
+                  ..._document!.items.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final item = entry.value;
+                    return TableRow(
+                      children: [
+                        _buildTableCell((index + 1).toString()),
+                        _buildTableCell(item.productName),
+                        _buildTableCell(item.quantity.toString()),
+                        _buildTableCell(item.unit),
+                        if (showInternal) _buildTableCell(NumberFormatter.formatWithComma(item.purchasePrice)),
+                        if (showInternal) _buildTableCell('${item.profitPercentage.toStringAsFixed(1)}%'),
+                        _buildTableCell(NumberFormatter.formatWithComma(item.sellPrice)),
+                        if (showInternal) _buildTableCell(NumberFormatter.formatWithComma(item.profitAmount)),
+                        _buildTableCell(NumberFormatter.formatWithComma(item.totalPrice)),
+                      ],
+                    );
+                  }),
+                ],
+              ),
             ),
           ],
         ),
@@ -330,12 +362,19 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
   }
 
   Widget _buildTotals() {
+    final showInternal = _document!.documentType.showInternalDetails;
+    
     return Card(
       color: AppColors.primary.withValues(alpha: 0.05),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            if (showInternal) ...[
+              _buildTotalRow('جمع خرید', _document!.totalPurchaseAmount),
+              _buildTotalRow('جمع سود', _document!.totalProfitAmount),
+              const Divider(),
+            ],
             _buildTotalRow('جمع کل', _document!.totalAmount),
             if (_document!.discount > 0) _buildTotalRow('تخفیف', _document!.discount),
             const Divider(thickness: 2),
@@ -357,12 +396,23 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'یادداشت',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(_document!.notes!),
+            if (_document!.notes != null) ...[
+              const Text(
+                'یادداشت',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(_document!.notes!),
+              const SizedBox(height: 16),
+            ],
+            if (_document!.attachment != null) ...[
+              const Text(
+                'پیوست',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(_document!.attachment!),
+            ],
           ],
         ),
       ),
@@ -471,6 +521,56 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
     }
   }
 
+  Future<void> _convertDocument() async {
+    if (_document == null) return;
+    
+    final nextType = _document!.documentType.nextType;
+    if (nextType == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(_document!.documentType.convertButtonText ?? 'تبدیل'),
+        content: Text('آیا مطمئن هستید که می‌خواهید این سند را به ${nextType.toFarsi()} تبدیل کنید؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('لغو'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('تبدیل'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final convertUseCase = di.sl<ConvertDocumentUseCase>();
+      final result = await convertUseCase(_document!);
+      
+      result.fold(
+        (failure) {
+          _showSnack(failure.message, isError: true);
+        },
+        (convertedDocument) {
+          _showSnack('سند با موفقیت به ${nextType.toFarsi()} تبدیل شد');
+          // بازگشت به صفحه قبل و نمایش سند جدید
+          Navigator.pushReplacementNamed(
+            context,
+            '/documents/preview',
+            arguments: convertedDocument.id,
+          );
+        },
+      );
+    } catch (e, stack) {
+      AppLogger.error('Failed to convert document', 'DocumentPreview', e, stack);
+      _showSnack('خطا در تبدیل سند', isError: true);
+    }
+  }
+
   Future<void> _exportToPdf() async {
     if (_document == null || _customer == null) return;
     try {
@@ -560,6 +660,8 @@ class StaticDocumentPreviewPage extends StatelessWidget {
     // Debug logging
     AppLogger.debug('StaticDocumentPreviewPage built', 'PREVIEW');
     AppLogger.debug('Document: ${document.documentNumber}', 'PREVIEW');
+    AppLogger.debug('Document Type: ${document.documentType}', 'PREVIEW');
+    AppLogger.debug('Show Internal Details: ${document.documentType.showInternalDetails}', 'PREVIEW');
     AppLogger.debug('Customer data available: ${customerData != null}', 'PREVIEW');
     if (customer != null) {
       AppLogger.debug('Customer name: ${customer.name}', 'PREVIEW');
@@ -735,41 +837,68 @@ class StaticDocumentPreviewPage extends StatelessWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            Table(
-              border: TableBorder.all(color: Colors.grey.shade300),
-              columnWidths: const {
-                0: FlexColumnWidth(0.5),
-                1: FlexColumnWidth(2),
-                2: FlexColumnWidth(1),
-                3: FlexColumnWidth(1.5),
-                4: FlexColumnWidth(1.5),
-              },
-              children: [
-                TableRow(
-                  decoration: BoxDecoration(color: Colors.grey.shade100),
-                  children: [
-                    _buildTableHeader('ردیف'),
-                    _buildTableHeader('محصول'),
-                    _buildTableHeader('تعداد'),
-                    _buildTableHeader('قیمت واحد'),
-                    _buildTableHeader('مبلغ کل'),
-                  ],
-                ),
-                ...document.items.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final item = entry.value;
-                  return TableRow(
+            Builder(builder: (context) {
+              final showInternal = document.documentType.showInternalDetails;
+              AppLogger.debug('Building items table with showInternalDetails: $showInternal', 'PREVIEW');
+              AppLogger.debug('Column count: ${showInternal ? 9 : 6}', 'PREVIEW');
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Table(
+                  border: TableBorder.all(color: Colors.grey.shade300),
+                  columnWidths: showInternal ? const {
+                  0: FixedColumnWidth(50),
+                  1: FixedColumnWidth(150),
+                  2: FixedColumnWidth(80),
+                  3: FixedColumnWidth(80),
+                  4: FixedColumnWidth(100),
+                  5: FixedColumnWidth(80),
+                  6: FixedColumnWidth(100),
+                  7: FixedColumnWidth(100),
+                  8: FixedColumnWidth(100),
+                } : const {
+                  0: FixedColumnWidth(50),
+                  1: FixedColumnWidth(200),
+                  2: FixedColumnWidth(80),
+                  3: FixedColumnWidth(80),
+                  4: FixedColumnWidth(120),
+                  5: FixedColumnWidth(120),
+                },
+                children: [
+                  TableRow(
+                    decoration: BoxDecoration(color: Colors.grey.shade100),
                     children: [
-                      _buildTableCell((index + 1).toString()),
-                      _buildTableCell(item.productName),
-                      _buildTableCell(item.quantity.toString()),
-                      _buildTableCell(NumberFormatter.formatWithComma(item.unitPrice)),
-                      _buildTableCell(NumberFormatter.formatWithComma(item.totalPrice)),
+                      _buildTableHeader('ردیف'),
+                      _buildTableHeader('محصول'),
+                      _buildTableHeader('تعداد'),
+                      _buildTableHeader('واحد'),
+                      if (document.documentType.showInternalDetails) _buildTableHeader('قیمت خرید'),
+                      if (document.documentType.showInternalDetails) _buildTableHeader('درصد سود'),
+                      _buildTableHeader('قیمت فروش'),
+                      if (document.documentType.showInternalDetails) _buildTableHeader('سود'),
+                      _buildTableHeader('مبلغ کل'),
                     ],
-                  );
-                }),
-              ],
-            ),
+                  ),
+                  ...document.items.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final item = entry.value;
+                    return TableRow(
+                      children: [
+                        _buildTableCell((index + 1).toString()),
+                        _buildTableCell(item.productName),
+                        _buildTableCell(item.quantity.toString()),
+                        _buildTableCell(item.unit),
+                        if (document.documentType.showInternalDetails) _buildTableCell(NumberFormatter.formatWithComma(item.purchasePrice)),
+                        if (document.documentType.showInternalDetails) _buildTableCell('${item.profitPercentage.toStringAsFixed(1)}%'),
+                        _buildTableCell(NumberFormatter.formatWithComma(item.sellPrice)),
+                        if (document.documentType.showInternalDetails) _buildTableCell(NumberFormatter.formatWithComma(item.profitAmount)),
+                        _buildTableCell(NumberFormatter.formatWithComma(item.totalPrice)),
+                      ],
+                    );
+                  }),
+                ],
+              ),
+            );
+            }),
           ],
         ),
       ),
@@ -777,12 +906,19 @@ class StaticDocumentPreviewPage extends StatelessWidget {
   }
 
   Widget _buildTotals(DocumentEntity document) {
+    final showInternal = document.documentType.showInternalDetails;
+    
     return Card(
       color: AppColors.primary.withValues(alpha: 0.05),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            if (showInternal) ...[
+              _buildTotalRow('جمع خرید', document.totalPurchaseAmount),
+              _buildTotalRow('جمع سود', document.totalProfitAmount),
+              const Divider(),
+            ],
             _buildTotalRow('جمع کل', document.totalAmount),
             if (document.discount > 0) _buildTotalRow('تخفیف', document.discount),
             const Divider(thickness: 2),

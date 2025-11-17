@@ -31,13 +31,16 @@ class DocumentModelAdapter extends TypeAdapter<DocumentModel> {
       notes: fields[11] as String?,
       createdAt: fields[12] as DateTime,
       updatedAt: fields[13] as DateTime,
+      attachment: fields[14] as String?,
+      defaultProfitPercentage: fields[15] as double,
+      convertedFromId: fields[16] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, DocumentModel obj) {
     writer
-      ..writeByte(14)
+      ..writeByte(17)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -65,7 +68,13 @@ class DocumentModelAdapter extends TypeAdapter<DocumentModel> {
       ..writeByte(12)
       ..write(obj.createdAt)
       ..writeByte(13)
-      ..write(obj.updatedAt);
+      ..write(obj.updatedAt)
+      ..writeByte(14)
+      ..write(obj.attachment)
+      ..writeByte(15)
+      ..write(obj.defaultProfitPercentage)
+      ..writeByte(16)
+      ..write(obj.convertedFromId);
   }
 
   @override

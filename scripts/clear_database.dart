@@ -1,0 +1,66 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+
+/// اسکریپت پاک کردن دیتابیس
+/// 
+/// این اسکریپت تمام باکس‌های Hive را پاک می‌کند
+/// برای استفاده: dart run scripts/clear_database.dart
+
+void main() async {
+  if (kDebugMode) {
+    print('🗑️  شروع پاک‌سازی دیتابیس...');
+  }
+  
+  try {
+    // مقداردهی Hive
+    await Hive.initFlutter();
+    
+    // لیست باکس‌ها
+    final boxes = [
+      'auth',
+      'currentUser',
+      'customers',
+      'documents',
+    ];
+    
+    if (kDebugMode) {
+      print('\n📦 باکس‌های موجود:');
+    }
+    for (var boxName in boxes) {
+      final boxExists = await Hive.boxExists(boxName);
+      print('  - $boxName: ${boxExists ? "✓ وجود دارد" : "✗ وجود ندارد"}');
+    }
+    
+    print('\n⚠️  آیا مطمئن هستید که می‌خواهید تمام داده‌ها را پاک کنید؟');
+    print('این عملیات قابل بازگشت نیست!');
+    print('\nبرای ادامه "yes" تایپ کنید: ');
+    
+    final input = stdin.readLineSync();
+    
+    if (input?.toLowerCase() != 'yes') {
+      print('\n❌ عملیات لغو شد.');
+      return;
+    }
+    
+    print('\n🔥 در حال پاک کردن...\n');
+    
+    for (var boxName in boxes) {
+      try {
+        await Hive.deleteBoxFromDisk(boxName);
+        print('  ✅ $boxName پاک شد');
+      } catch (e) {
+        print('  ⚠️  خطا در پاک کردن $boxName: $e');
+      }
+    }
+    
+    print('\n✅ دیتابیس با موفقیت پاک شد!');
+    print('حالا می‌توانید برنامه را دوباره اجرا کنید.\n');
+    
+  } catch (e) {
+    print('\n❌ خطا: $e');
+    exit(1);
+  }
+  
+  exit(0);
+}

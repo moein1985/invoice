@@ -41,6 +41,7 @@ import 'features/document/domain/usecases/get_documents_usecase.dart';
 import 'features/document/domain/usecases/get_document_by_id_usecase.dart';
 import 'features/document/domain/usecases/search_documents_usecase.dart';
 import 'features/document/domain/usecases/convert_proforma_to_invoice_usecase.dart';
+import 'features/document/domain/usecases/convert_document_usecase.dart';
 import 'features/document/domain/usecases/get_next_document_number_usecase.dart';
 import 'features/document/presentation/bloc/document_bloc.dart';
 import 'features/export/services/pdf_export_service.dart';
@@ -174,6 +175,7 @@ Future<void> init() async {
       deleteDocumentUseCase: sl(),
       searchDocumentsUseCase: sl(),
       convertProformaToInvoiceUseCase: sl(),
+      convertDocumentUseCase: sl(),
     ),
   );
 
@@ -185,6 +187,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => DeleteDocumentUseCase(sl()));
   sl.registerLazySingleton(() => SearchDocumentsUseCase(sl()));
   sl.registerLazySingleton(() => ConvertProformaToInvoiceUseCase(sl()));
+  sl.registerLazySingleton(() => ConvertDocumentUseCase(sl(), sl()));
   sl.registerLazySingleton(() => GetNextDocumentNumberUseCase(sl()));
 
   // Repository

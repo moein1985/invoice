@@ -20,18 +20,21 @@ class DocumentItemModelAdapter extends TypeAdapter<DocumentItemModel> {
       id: fields[0] as String,
       productName: fields[1] as String,
       quantity: fields[2] as int,
-      unitPrice: fields[3] as double,
-      totalPrice: fields[4] as double,
-      profitPercentage: fields[5] as double,
-      supplier: fields[6] as String,
-      description: fields[7] as String?,
+      unit: fields[3] as String,
+      purchasePrice: fields[4] as double,
+      sellPrice: fields[5] as double,
+      totalPrice: fields[6] as double,
+      profitPercentage: fields[7] as double,
+      supplier: fields[8] as String,
+      description: fields[9] as String?,
+      isManualPrice: fields[10] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, DocumentItemModel obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -39,15 +42,21 @@ class DocumentItemModelAdapter extends TypeAdapter<DocumentItemModel> {
       ..writeByte(2)
       ..write(obj.quantity)
       ..writeByte(3)
-      ..write(obj.unitPrice)
+      ..write(obj.unit)
       ..writeByte(4)
-      ..write(obj.totalPrice)
+      ..write(obj.purchasePrice)
       ..writeByte(5)
-      ..write(obj.profitPercentage)
+      ..write(obj.sellPrice)
       ..writeByte(6)
-      ..write(obj.supplier)
+      ..write(obj.totalPrice)
       ..writeByte(7)
-      ..write(obj.description);
+      ..write(obj.profitPercentage)
+      ..writeByte(8)
+      ..write(obj.supplier)
+      ..writeByte(9)
+      ..write(obj.description)
+      ..writeByte(10)
+      ..write(obj.isManualPrice);
   }
 
   @override

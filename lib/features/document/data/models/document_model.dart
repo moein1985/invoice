@@ -50,6 +50,15 @@ class DocumentModel {
   @HiveField(13)
   final DateTime updatedAt;
 
+  @HiveField(14)
+  final String? attachment;
+
+  @HiveField(15)
+  final double defaultProfitPercentage;
+
+  @HiveField(16)
+  final String? convertedFromId;
+
   const DocumentModel({
     required this.id,
     required this.userId,
@@ -65,10 +74,37 @@ class DocumentModel {
     this.notes,
     required this.createdAt,
     required this.updatedAt,
+    this.attachment,
+    this.defaultProfitPercentage = 22.0,
+    this.convertedFromId,
   });
 
   static DocumentType _parseDocumentType(String type) {
-    return type == 'invoice' ? DocumentType.invoice : DocumentType.proforma;
+    switch (type) {
+      case 'temp_proforma':
+        return DocumentType.tempProforma;
+      case 'proforma':
+        return DocumentType.proforma;
+      case 'invoice':
+        return DocumentType.invoice;
+      case 'return':
+        return DocumentType.returnInvoice;
+      default:
+        return DocumentType.tempProforma;
+    }
+  }
+
+  static String _documentTypeToString(DocumentType type) {
+    switch (type) {
+      case DocumentType.tempProforma:
+        return 'temp_proforma';
+      case DocumentType.proforma:
+        return 'proforma';
+      case DocumentType.invoice:
+        return 'invoice';
+      case DocumentType.returnInvoice:
+        return 'return';
+    }
   }
 
   static DocumentStatus _parseDocumentStatus(String status) {
@@ -87,7 +123,7 @@ class DocumentModel {
       id: entity.id,
       userId: entity.userId,
       documentNumber: entity.documentNumber,
-      documentTypeString: entity.documentType == DocumentType.invoice ? 'invoice' : 'proforma',
+      documentTypeString: _documentTypeToString(entity.documentType),
       customerId: entity.customerId,
       documentDate: entity.documentDate,
       items: entity.items.map((item) => DocumentItemModel.fromEntity(item)).toList(),
@@ -102,6 +138,9 @@ class DocumentModel {
       notes: entity.notes,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
+      attachment: entity.attachment,
+      defaultProfitPercentage: entity.defaultProfitPercentage,
+      convertedFromId: entity.convertedFromId,
     );
   }
 
@@ -117,6 +156,9 @@ class DocumentModel {
       totalAmount: totalAmount,
       discount: discount,
       finalAmount: finalAmount,
+      attachment: attachment,
+      defaultProfitPercentage: defaultProfitPercentage,
+      convertedFromId: convertedFromId,
       status: _parseDocumentStatus(statusString),
       notes: notes,
       createdAt: createdAt,

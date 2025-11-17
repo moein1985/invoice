@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
+import '../../../../core/utils/logger.dart';
 import '../../../../core/enums/document_type.dart';
 import '../../../../core/enums/document_status.dart';
 import '../../../../core/themes/app_colors.dart';
@@ -44,6 +45,8 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
   DocumentStatus _selectedStatus = DocumentStatus.unpaid;
   final _notesController = TextEditingController();
   final _discountController = TextEditingController(text: '0');
+  final _attachmentController = TextEditingController(); // یادداشت/پیوست
+  final _defaultProfitController = TextEditingController(text: '22'); // درصد سود پیش‌فرض
   
   List<DocumentItemEntity> _items = [];
   bool _isLoading = false;
@@ -61,6 +64,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
   }
 
   Future<void> _loadInitialData() async {
+    AppLogger.debug('Initial form load started existingId=${widget.documentId} initialType=${_selectedType}', 'DocumentForm');
     setState(() => _isLoading = true);
     
     // Load customers
@@ -77,10 +81,12 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
         },
         (number) {
           setState(() => _documentNumber = number);
+          AppLogger.debug('Generated document number=$_documentNumber type=$_selectedType', 'DocumentForm');
         },
       );
     } else {
       // Load existing document
+      AppLogger.debug('Loading existing document id=${widget.documentId}', 'DocumentForm');
       context.read<DocumentBloc>().add(LoadDocumentById(widget.documentId!));
     }
 
@@ -91,6 +97,8 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
   void dispose() {
     _notesController.dispose();
     _discountController.dispose();
+    _attachmentController.dispose();
+    _defaultProfitController.dispose();
     super.dispose();
   }
 
@@ -129,15 +137,22 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildDocumentTypeSelector(),
+                      _buildDocumentInfo(),
                       const SizedBox(height: 16),
-                      _buildDocumentNumber(),
                       const SizedBox(height: 16),
                       _buildCustomerSelector(),
                       const SizedBox(height: 16),
                       _buildDatePicker(),
                       const SizedBox(height: 16),
                       _buildStatusSelector(),
+                      const SizedBox(height: 16),
+                      // درصد سود پیش‌فرض
+                      CustomTextField(
+                        controller: _defaultProfitController,
+                        label: 'درصد سود پیش‌فرض (%)',
+                        keyboardType: TextInputType.number,
+                        validator: (val) => Validators.validateNumber(val, 'درصد سود'),
+                      ),
                       const SizedBox(height: 24),
                       _buildItemsSection(),
                       const SizedBox(height: 16),
@@ -153,17 +168,50 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                         label: 'یادداشت',
                         maxLines: 3,
                       ),
+                      const SizedBox(height: 16),
+                      // یادداشت/پیوست
+                      CustomTextField(
+                        controller: _attachmentController,
+                        label: 'پیوست (مثلاً: این پیش‌فاکتور برای قرارداد 22/44)',
+                        maxLines: 2,
+                      ),
                       const SizedBox(height: 24),
                       _buildSummary(),
                       const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        child: CustomButton(
-                          text: widget.documentId == null ? 'ایجاد سند' : 'به‌روزرسانی سند',
-                          onPressed: _saveDocument,
-                          icon: Icons.save,
-                        ),
+                      // دکمه‌های اصلی
+                      Row(
+                        children: [
+                          Expanded(
+                            child: CustomButton(
+                              text: widget.documentId == null ? 'ایجاد سند' : 'به‌روزرسانی سند',
+                              onPressed: _saveDocument,
+                              icon: Icons.save,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: CustomButton(
+                              text: 'خالی کردن فرم',
+                              onPressed: _clearForm,
+                              icon: Icons.clear_all,
+                              backgroundColor: Colors.grey,
+                            ),
+                          ),
+                        ],
                       ),
+                      // دکمه تبدیل (فقط برای پیش‌فاکتور موقت و پیش‌فاکتور)
+                      if (_selectedType.nextType != null && widget.documentId != null) ...[
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: CustomButton(
+                            text: _selectedType.convertButtonText ?? 'تبدیل',
+                            onPressed: _convertDocument,
+                            icon: Icons.arrow_forward,
+                            backgroundColor: AppColors.warning,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -172,24 +220,32 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
     );
   }
 
-  Widget _buildDocumentTypeSelector() {
+  Widget _buildDocumentInfo() {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            const Text('نوع سند:', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(width: 16),
+            Icon(_getDocumentTypeIcon(_selectedType), color: _getDocumentTypeColor(_selectedType)),
+            const SizedBox(width: 12),
             Expanded(
-              child: SegmentedButton<DocumentType>(
-                segments: const [
-                  ButtonSegment(value: DocumentType.invoice, label: Text('فاکتور')),
-                  ButtonSegment(value: DocumentType.proforma, label: Text('پیش‌فاکتور')),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _selectedType.toFarsi(),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: _getDocumentTypeColor(_selectedType),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'شماره: ${_documentNumber ?? 'در حال تولید...'}',
+                    style: TextStyle(color: Colors.grey.shade700),
+                  ),
                 ],
-                selected: {_selectedType},
-                onSelectionChanged: (Set<DocumentType> newSelection) {
-                  setState(() => _selectedType = newSelection.first);
-                },
               ),
             ),
           ],
@@ -198,14 +254,30 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
     );
   }
 
-  Widget _buildDocumentNumber() {
-    return Card(
-      child: ListTile(
-        leading: const Icon(Icons.numbers),
-        title: const Text('شماره سند'),
-        subtitle: Text(_documentNumber ?? 'در حال تولید...'),
-      ),
-    );
+  IconData _getDocumentTypeIcon(DocumentType type) {
+    switch (type) {
+      case DocumentType.tempProforma:
+        return Icons.edit_note;
+      case DocumentType.proforma:
+        return Icons.description;
+      case DocumentType.invoice:
+        return Icons.receipt;
+      case DocumentType.returnInvoice:
+        return Icons.assignment_return;
+    }
+  }
+
+  Color _getDocumentTypeColor(DocumentType type) {
+    switch (type) {
+      case DocumentType.tempProforma:
+        return Colors.orange;
+      case DocumentType.proforma:
+        return Colors.blue;
+      case DocumentType.invoice:
+        return Colors.green;
+      case DocumentType.returnInvoice:
+        return Colors.red;
+    }
   }
 
   Widget _buildCustomerSelector() {
@@ -326,14 +398,28 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
                     color: Colors.grey[50],
                     child: ListTile(
                       title: Text(item.productName),
-                      subtitle: Text(
-                        'تعداد: ${item.quantity} × ${item.unitPrice.toStringAsFixed(0)} = ${item.totalPrice.toStringAsFixed(0)} ریال',
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('تعداد: ${item.quantity} ${item.unit}'),
+                          Text('قیمت خرید: ${item.purchasePrice.toStringAsFixed(0)} | قیمت فروش: ${item.sellPrice.toStringAsFixed(0)} ریال'),
+                          Text('سود: ${item.profitAmount.toStringAsFixed(0)} ریال | جمع: ${item.totalPrice.toStringAsFixed(0)} ریال'),
+                        ],
                       ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete, color: AppColors.error),
-                        onPressed: () {
-                          setState(() => _items.removeAt(index));
-                        },
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit, color: AppColors.primary),
+                            onPressed: () => _editItem(index),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: AppColors.error),
+                            onPressed: () {
+                              setState(() => _items.removeAt(index));
+                            },
+                          ),
+                        ],
                       ),
                     ),
                   );
@@ -383,17 +469,37 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
   }
 
   void _addItem() {
+    final defaultProfit = double.tryParse(_defaultProfitController.text) ?? 22.0;
     showDialog(
       context: context,
       builder: (context) => _AddItemDialog(
+        defaultProfitPercentage: defaultProfit,
         onAdd: (item) {
           setState(() => _items.add(item));
+          AppLogger.debug('Item added id=${item.id} name=${item.productName} qty=${item.quantity} purchase=${item.purchasePrice} sell=${item.sellPrice} profit=${item.profitAmount}', 'DocumentForm');
+        },
+      ),
+    );
+  }
+
+  void _editItem(int index) {
+    final item = _items[index];
+    final defaultProfit = double.tryParse(_defaultProfitController.text) ?? 22.0;
+    showDialog(
+      context: context,
+      builder: (context) => _AddItemDialog(
+        defaultProfitPercentage: defaultProfit,
+        existingItem: item,
+        onAdd: (updatedItem) {
+          setState(() => _items[index] = updatedItem);
+          AppLogger.debug('Item edited id=${updatedItem.id} name=${updatedItem.productName} qty=${updatedItem.quantity} purchase=${updatedItem.purchasePrice} sell=${updatedItem.sellPrice} profit=${updatedItem.profitAmount}', 'DocumentForm');
         },
       ),
     );
   }
 
   void _populateForm(DocumentEntity document) {
+    AppLogger.debug('Populating form id=${document.id} number=${document.documentNumber} type=${document.documentType} items=${document.items.length}', 'DocumentForm');
     setState(() {
       _selectedType = document.documentType;
       _selectedCustomerId = document.customerId;
@@ -404,6 +510,67 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
       _items = List.from(document.items);
       _documentNumber = document.documentNumber;
     });
+  }
+
+  void _clearForm() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('تأیید'),
+        content: const Text('آیا مطمئن هستید که می‌خواهید فرم را خالی کنید؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('لغو'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                _items.clear();
+                _notesController.clear();
+                _discountController.text = '0';
+                _attachmentController.clear();
+                _defaultProfitController.text = '22';
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('فرم با موفقیت خالی شد')),
+              );
+            },
+            child: const Text('تأیید'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _convertDocument() {
+    final nextType = _selectedType.nextType;
+    if (nextType == null) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(_selectedType.convertButtonText ?? 'تبدیل'),
+        content: Text('آیا مطمئن هستید که می‌خواهید این سند را به ${nextType.toFarsi()} تبدیل کنید؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('لغو'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              // TODO: پیاده‌سازی منطق تبدیل
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('عملیات تبدیل در حال پیاده‌سازی است')),
+              );
+            },
+            child: const Text('تبدیل'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _saveDocument() {
@@ -422,6 +589,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
     final totalAmount = _items.fold<double>(0, (sum, item) => sum + item.totalPrice);
     final discount = double.tryParse(_discountController.text) ?? 0;
     final finalAmount = totalAmount - discount;
+    final defaultProfit = double.tryParse(_defaultProfitController.text) ?? 22.0;
 
     final document = DocumentEntity(
       id: widget.documentId ?? _uuid.v4(),
@@ -436,13 +604,17 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
       finalAmount: finalAmount,
       status: _selectedStatus,
       notes: _notesController.text.isEmpty ? null : _notesController.text,
+      attachment: _attachmentController.text.isEmpty ? null : _attachmentController.text,
+      defaultProfitPercentage: defaultProfit,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
 
     if (widget.documentId == null) {
+      AppLogger.info('Dispatch CreateDocument number=${document.documentNumber} type=${document.documentType} items=${document.items.length}', 'DocumentForm');
       context.read<DocumentBloc>().add(CreateDocument(document));
     } else {
+      AppLogger.info('Dispatch UpdateDocument id=${document.id} number=${document.documentNumber} type=${document.documentType} items=${document.items.length}', 'DocumentForm');
       context.read<DocumentBloc>().add(UpdateDocument(document));
     }
   }
@@ -450,8 +622,14 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
 
 class _AddItemDialog extends StatefulWidget {
   final Function(DocumentItemEntity) onAdd;
+  final double defaultProfitPercentage;
+  final DocumentItemEntity? existingItem;
 
-  const _AddItemDialog({required this.onAdd});
+  const _AddItemDialog({
+    required this.onAdd,
+    required this.defaultProfitPercentage,
+    this.existingItem,
+  });
 
   @override
   State<_AddItemDialog> createState() => _AddItemDialogState();
@@ -461,16 +639,61 @@ class _AddItemDialogState extends State<_AddItemDialog> {
   final _formKey = GlobalKey<FormState>();
   final _productNameController = TextEditingController();
   final _quantityController = TextEditingController();
-  final _unitPriceController = TextEditingController();
-  final _profitPercentageController = TextEditingController(text: '0');
+  final _unitController = TextEditingController(text: 'عدد');
+  final _purchasePriceController = TextEditingController();
+  final _sellPriceController = TextEditingController();
+  final _profitPercentageController = TextEditingController();
   final _supplierController = TextEditingController();
   final _descriptionController = TextEditingController();
+  
+  bool _isManualPrice = false; // آیا قیمت دستی است؟
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // اگر آیتم موجود است، فیلدها را پر کن
+    if (widget.existingItem != null) {
+      final item = widget.existingItem!;
+      _productNameController.text = item.productName;
+      _quantityController.text = item.quantity.toString();
+      _unitController.text = item.unit;
+      _purchasePriceController.text = item.purchasePrice.toStringAsFixed(0);
+      _sellPriceController.text = item.sellPrice.toStringAsFixed(0);
+      _profitPercentageController.text = item.profitPercentage.toStringAsFixed(1);
+      _supplierController.text = item.supplier;
+      _descriptionController.text = item.description ?? '';
+      _isManualPrice = item.isManualPrice;
+    } else {
+      // پر کردن درصد سود با مقدار پیش‌فرض
+      _profitPercentageController.text = widget.defaultProfitPercentage.toStringAsFixed(1);
+    }
+    
+    // محاسبه خودکار قیمت فروش وقتی قیمت خرید تغییر می‌کند
+    _purchasePriceController.addListener(_calculateSellPrice);
+    _profitPercentageController.addListener(_calculateSellPrice);
+  }
+
+  void _calculateSellPrice() {
+    if (_isManualPrice) return; // اگر قیمت دستی است، محاسبه نکن
+    
+    final purchasePrice = double.tryParse(_purchasePriceController.text);
+    final profitPercentage = double.tryParse(_profitPercentageController.text);
+    
+    if (purchasePrice != null && profitPercentage != null) {
+      final sellPrice = purchasePrice * (1 + profitPercentage / 100);
+      _sellPriceController.text = sellPrice.toStringAsFixed(0);
+      AppLogger.debug('Auto sell price calculated purchase=$purchasePrice profit%=$profitPercentage sell=$sellPrice', 'ItemDialog');
+    }
+  }
 
   @override
   void dispose() {
     _productNameController.dispose();
     _quantityController.dispose();
-    _unitPriceController.dispose();
+    _unitController.dispose();
+    _purchasePriceController.dispose();
+    _sellPriceController.dispose();
     _profitPercentageController.dispose();
     _supplierController.dispose();
     _descriptionController.dispose();
@@ -480,7 +703,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('افزودن ردیف'),
+      title: Text(widget.existingItem != null ? 'ویرایش ردیف' : 'افزودن ردیف'),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -501,17 +724,50 @@ class _AddItemDialogState extends State<_AddItemDialog> {
               ),
               const SizedBox(height: 12),
               CustomTextField(
-                controller: _unitPriceController,
-                label: 'قیمت واحد',
-                keyboardType: TextInputType.number,
-                validator: (val) => Validators.validatePositiveNumber(val, 'قیمت واحد'),
+                controller: _unitController,
+                label: 'واحد',
+                validator: (val) => Validators.validateRequired(val, 'واحد'),
               ),
               const SizedBox(height: 12),
               CustomTextField(
-                controller: _profitPercentageController,
-                label: 'درصد سود',
+                controller: _purchasePriceController,
+                label: 'قیمت خرید',
                 keyboardType: TextInputType.number,
-                validator: (val) => Validators.validateNumber(val, 'درصد سود'),
+                validator: (val) => Validators.validatePositiveNumber(val, 'قیمت خرید'),
+              ),
+              const SizedBox(height: 12),
+              // چک‌باکس قیمت دستی
+              CheckboxListTile(
+                title: const Text('قیمت فروش دستی'),
+                value: _isManualPrice,
+                onChanged: (value) {
+                  setState(() {
+                    _isManualPrice = value ?? false;
+                    if (!_isManualPrice) {
+                      // اگر حالت خودکار شد، دوباره محاسبه کن
+                      _calculateSellPrice();
+                    }
+                  });
+                },
+                contentPadding: EdgeInsets.zero,
+              ),
+              const SizedBox(height: 12),
+              // اگر قیمت دستی نیست، فیلد درصد سود نشان بده
+              if (!_isManualPrice) ...[
+                CustomTextField(
+                  controller: _profitPercentageController,
+                  label: 'درصد سود (%)',
+                  keyboardType: TextInputType.number,
+                  validator: (val) => Validators.validateNumber(val, 'درصد سود'),
+                ),
+                const SizedBox(height: 12),
+              ],
+              CustomTextField(
+                controller: _sellPriceController,
+                label: 'قیمت فروش',
+                keyboardType: TextInputType.number,
+                validator: (val) => Validators.validatePositiveNumber(val, 'قیمت فروش'),
+                readOnly: !_isManualPrice, // فقط در حالت دستی قابل ویرایش
               ),
               const SizedBox(height: 12),
               CustomTextField(
@@ -536,7 +792,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
         ),
         ElevatedButton(
           onPressed: _addItem,
-          child: const Text('افزودن'),
+          child: Text(widget.existingItem != null ? 'ذخیره' : 'افزودن'),
         ),
       ],
     );
@@ -546,21 +802,29 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     if (!_formKey.currentState!.validate()) return;
 
     final quantity = int.parse(_quantityController.text);
-    final unitPrice = double.parse(_unitPriceController.text);
-    final totalPrice = quantity * unitPrice;
+    final purchasePrice = double.parse(_purchasePriceController.text);
+    final profitPercentage = _isManualPrice 
+        ? null 
+        : double.tryParse(_profitPercentageController.text);
+    final sellPrice = _isManualPrice 
+        ? double.parse(_sellPriceController.text) 
+        : null;
 
-    final item = DocumentItemEntity(
-      id: const Uuid().v4(),
+    final item = DocumentItemEntity.create(
+      id: widget.existingItem?.id ?? const Uuid().v4(),
       productName: _productNameController.text,
       quantity: quantity,
-      unitPrice: unitPrice,
-      totalPrice: totalPrice,
-      profitPercentage: double.parse(_profitPercentageController.text),
+      unit: _unitController.text,
+      purchasePrice: purchasePrice,
+      sellPrice: sellPrice,
+      profitPercentage: profitPercentage,
       supplier: _supplierController.text,
       description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
+      isManualPrice: _isManualPrice,
     );
 
     widget.onAdd(item);
+    AppLogger.debug('Dialog submit item id=${item.id} name=${item.productName} qty=${item.quantity} purchase=${item.purchasePrice} sell=${item.sellPrice} profit=${item.profitAmount}', 'ItemDialog');
     Navigator.pop(context);
   }
 }

@@ -28,7 +28,7 @@ void main() {
   });
 
   test('createDocument delegates to repository', () async {
-    final item = DocumentItemEntity(id: 'i1', productName: 'P', quantity: 1, unitPrice: 1.0, totalPrice: 1.0, profitPercentage: 0.0, supplier: 'S');
+    final item = DocumentItemEntity(id: 'i1', productName: 'P', quantity: 1, unit: 'عدد', purchasePrice: 0.8, sellPrice: 1.0, totalPrice: 1.0, profitPercentage: 25.0, supplier: 'S');
     final doc = DocumentEntity(
       id: 'd1',
       userId: 'u1',

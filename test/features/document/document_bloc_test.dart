@@ -11,6 +11,7 @@ import 'package:invoice/features/document/domain/usecases/update_document_usecas
 import 'package:invoice/features/document/domain/usecases/delete_document_usecase.dart';
 import 'package:invoice/features/document/domain/usecases/search_documents_usecase.dart';
 import 'package:invoice/features/document/domain/usecases/convert_proforma_to_invoice_usecase.dart';
+import 'package:invoice/features/document/domain/usecases/convert_document_usecase.dart';
 import 'package:invoice/features/document/domain/entities/document_entity.dart';
 import 'package:invoice/features/document/domain/entities/document_item_entity.dart';
 import 'package:invoice/core/enums/document_type.dart' as dt;
@@ -23,6 +24,7 @@ class MockUpdateDocument extends Mock implements UpdateDocumentUseCase {}
 class MockDeleteDocument extends Mock implements DeleteDocumentUseCase {}
 class MockSearchDocuments extends Mock implements SearchDocumentsUseCase {}
 class MockConvertProforma extends Mock implements ConvertProformaToInvoiceUseCase {}
+class MockConvertDocument extends Mock implements ConvertDocumentUseCase {}
 
 void main() {
   late MockGetDocuments mockGetDocuments;
@@ -38,6 +40,7 @@ void main() {
     final mockUpdateDocument = MockUpdateDocument();
     final mockDeleteDocument = MockDeleteDocument();
     final mockSearchDocuments = MockSearchDocuments();
+    final mockConvertDocument = MockConvertDocument();
 
     bloc = DocumentBloc(
       getDocumentsUseCase: mockGetDocuments,
@@ -47,6 +50,7 @@ void main() {
       deleteDocumentUseCase: mockDeleteDocument,
       searchDocumentsUseCase: mockSearchDocuments,
       convertProformaToInvoiceUseCase: mockConvertProforma,
+      convertDocumentUseCase: mockConvertDocument,
     );
   });
 
@@ -58,7 +62,7 @@ void main() {
       documentType: dt.DocumentType.invoice,
       customerId: 'c1',
       documentDate: DateTime.now(),
-      items: [DocumentItemEntity(id: 'i1', productName: 'item', quantity: 1, unitPrice: 100, totalPrice: 100, profitPercentage: 0, supplier: 's1')],
+      items: [DocumentItemEntity(id: 'i1', productName: 'item', quantity: 1, unit: 'عدد', purchasePrice: 80, sellPrice: 100, totalPrice: 100, profitPercentage: 25, supplier: 's1')],
       totalAmount: 100,
       discount: 0,
       finalAmount: 100,
@@ -84,7 +88,7 @@ void main() {
       documentType: dt.DocumentType.invoice,
       customerId: 'c1',
       documentDate: DateTime.now(),
-      items: [DocumentItemEntity(id: 'i1', productName: 'item', quantity: 1, unitPrice: 100, totalPrice: 100, profitPercentage: 0, supplier: 's1')],
+      items: [DocumentItemEntity(id: 'i1', productName: 'item', quantity: 1, unit: 'عدد', purchasePrice: 80, sellPrice: 100, totalPrice: 100, profitPercentage: 25, supplier: 's1')],
       totalAmount: 100,
       discount: 0,
       finalAmount: 100,
@@ -110,7 +114,7 @@ void main() {
       documentType: dt.DocumentType.invoice,
       customerId: 'c1',
       documentDate: DateTime.now(),
-      items: [DocumentItemEntity(id: 'i1', productName: 'item', quantity: 1, unitPrice: 100, totalPrice: 100, profitPercentage: 0, supplier: 's1')],
+      items: [DocumentItemEntity(id: 'i1', productName: 'item', quantity: 1, unit: 'عدد', purchasePrice: 80, sellPrice: 100, totalPrice: 100, profitPercentage: 25, supplier: 's1')],
       totalAmount: 100,
       discount: 0,
       finalAmount: 100,

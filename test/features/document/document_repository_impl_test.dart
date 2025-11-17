@@ -10,13 +10,15 @@ class MockDocumentLocalDataSource extends Mock implements DocumentLocalDataSourc
 
 DocumentModel _sampleDoc({required String id, String type = 'invoice'}) {
   final item = DocumentItemModel(
-    id: 'it1',
-    productName: 'P',
+    id: 'i1',
+    productName: 'item',
     quantity: 1,
-    unitPrice: 10,
+    unit: 'عدد',
+    purchasePrice: 8,
+    sellPrice: 10,
     totalPrice: 10,
-    profitPercentage: 0,
-    supplier: 'S',
+    profitPercentage: 25,
+    supplier: 's',
   );
 
   return DocumentModel(

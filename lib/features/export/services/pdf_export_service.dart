@@ -42,9 +42,9 @@ class PdfExportService {
               _buildItemsTable(document),
               pw.SizedBox(height: 20),
               _buildTotals(document),
-              if (document.notes != null) ...[
+              if (document.notes != null || document.attachment != null) ...[
                 pw.SizedBox(height: 20),
-                _buildNotes(document.notes!),
+                _buildNotesAndAttachment(document),
               ],
             ],
           );
@@ -86,9 +86,9 @@ class PdfExportService {
                   _buildItemsTable(document),
                   pw.SizedBox(height: 20),
                   _buildTotals(document),
-                  if (document.notes != null) ...[
+                  if (document.notes != null || document.attachment != null) ...[
                     pw.SizedBox(height: 20),
-                    _buildNotes(document.notes!),
+                    _buildNotesAndAttachment(document),
                   ],
                 ],
               );
@@ -176,6 +176,8 @@ class PdfExportService {
   }
 
   pw.Widget _buildItemsTable(DocumentEntity document) {
+    final showInternal = document.documentType.showInternalDetails;
+    
     return pw.Table(
       border: pw.TableBorder.all(),
       children: [
@@ -186,7 +188,11 @@ class PdfExportService {
             _buildTableCell('ردیف', isHeader: true),
             _buildTableCell('محصول', isHeader: true),
             _buildTableCell('تعداد', isHeader: true),
-            _buildTableCell('قیمت واحد', isHeader: true),
+            _buildTableCell('واحد', isHeader: true),
+            if (showInternal) _buildTableCell('قیمت خرید', isHeader: true),
+            if (showInternal) _buildTableCell('درصد سود', isHeader: true),
+            _buildTableCell('قیمت فروش', isHeader: true),
+            if (showInternal) _buildTableCell('سود', isHeader: true),
             _buildTableCell('مبلغ کل', isHeader: true),
           ],
         ),
@@ -199,7 +205,11 @@ class PdfExportService {
               _buildTableCell((index + 1).toString()),
               _buildTableCell(item.productName),
               _buildTableCell(item.quantity.toString()),
-              _buildTableCell(_formatNumber(item.unitPrice)),
+              _buildTableCell(item.unit),
+              if (showInternal) _buildTableCell(_formatNumber(item.purchasePrice)),
+              if (showInternal) _buildTableCell('${item.profitPercentage.toStringAsFixed(1)}%'),
+              _buildTableCell(_formatNumber(item.sellPrice)),
+              if (showInternal) _buildTableCell(_formatNumber(item.profitAmount)),
               _buildTableCell(_formatNumber(item.totalPrice)),
             ],
           );
@@ -209,6 +219,8 @@ class PdfExportService {
   }
 
   pw.Widget _buildTotals(DocumentEntity document) {
+    final showInternal = document.documentType.showInternalDetails;
+
     return pw.Container(
       padding: const pw.EdgeInsets.all(10),
       decoration: pw.BoxDecoration(
@@ -218,7 +230,12 @@ class PdfExportService {
       ),
       child: pw.Column(
         children: [
-          _buildTotalRow('جمع کل:', document.totalAmount),
+          if (showInternal) ...[
+            _buildTotalRow('جمع کل خرید:', document.totalPurchaseAmount),
+            _buildTotalRow('جمع سود:', document.totalProfitAmount),
+            pw.Divider(),
+          ],
+          _buildTotalRow('جمع کل فروش:', document.totalAmount),
           if (document.discount > 0)
             _buildTotalRow('تخفیف:', document.discount),
           pw.Divider(thickness: 2),
@@ -228,7 +245,7 @@ class PdfExportService {
     );
   }
 
-  pw.Widget _buildNotes(String notes) {
+  pw.Widget _buildNotesAndAttachment(DocumentEntity document) {
     return pw.Container(
       padding: const pw.EdgeInsets.all(10),
       decoration: pw.BoxDecoration(
@@ -238,9 +255,17 @@ class PdfExportService {
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          pw.Text('یادداشت:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-          pw.SizedBox(height: 5),
-          pw.Text(notes),
+          if (document.notes != null) ...[
+            pw.Text('یادداشت:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 5),
+            pw.Text(document.notes!),
+            if (document.attachment != null) pw.SizedBox(height: 10),
+          ],
+          if (document.attachment != null) ...[
+            pw.Text('پیوست:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 5),
+            pw.Text(document.attachment!),
+          ],
         ],
       ),
     );
