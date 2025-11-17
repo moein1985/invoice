@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:invoice/features/auth/data/models/user_model.dart';
+import 'package:invoice/core/enums/user_role.dart';
 
 void main() {
   group('UserModel', () {
@@ -10,7 +11,7 @@ void main() {
         username: 'bob',
         password: 'pass',
         fullName: 'Bob',
-        role: 'user',
+        role: 'employee',
         isActive: true,
         createdAt: now,
       );
@@ -29,7 +30,7 @@ void main() {
         username: 'bob',
         password: 'pass',
         fullName: 'Bob',
-        role: 'user',
+        role: 'employee',
         isActive: true,
         createdAt: now,
       );

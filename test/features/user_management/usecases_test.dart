@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:invoice/core/error/failures.dart';
+import 'package:invoice/core/enums/user_role.dart';
 import 'package:invoice/features/user_management/domain/entities/user_entity.dart';
 import 'package:invoice/features/user_management/domain/repositories/user_repository.dart';
 import 'package:invoice/features/user_management/domain/usecases/create_user_usecase.dart';
@@ -35,7 +36,7 @@ void main() {
   });
 
   test('GetUsersUseCase returns list on success', () async {
-    final u = UserEntity(id: '1', username: 'a', password: '', fullName: 'A', role: 'user', isActive: true, createdAt: DateTime.now());
+    final u = UserEntity(id: '1', username: 'a', password: '', fullName: 'A', role: UserRole.employee, isActive: true, createdAt: DateTime.now());
     when(() => mockRepo.getUsers()).thenAnswer((_) async => Right([u]));
 
     final res = await getUsers();
@@ -44,11 +45,11 @@ void main() {
   });
 
   test('CreateUserUseCase returns user on success', () async {
-    final u = UserEntity(id: '2', username: 'bob', password: '', fullName: 'Bob', role: 'user', isActive: true, createdAt: DateTime.now());
+    final u = UserEntity(id: '2', username: 'bob', password: '', fullName: 'Bob', role: UserRole.employee, isActive: true, createdAt: DateTime.now());
     when(() => mockRepo.createUser(username: any(named: 'username'), password: any(named: 'password'), fullName: any(named: 'fullName'), role: any(named: 'role')))
         .thenAnswer((_) async => Right(u));
 
-    final res = await createUser(username: 'bob', password: 'p', fullName: 'Bob', role: 'user');
+    final res = await createUser(username: 'bob', password: 'p', fullName: 'Bob', role: UserRole.employee.name);
     expect(res.isRight(), isTrue);
   });
 
@@ -72,7 +73,7 @@ void main() {
   });
 
   test('ToggleUserStatusUseCase returns user on success', () async {
-    final u = UserEntity(id: '3', username: 'c', password: '', fullName: 'C', role: 'user', isActive: true, createdAt: DateTime.now());
+    final u = UserEntity(id: '3', username: 'c', password: '', fullName: 'C', role: UserRole.employee, isActive: true, createdAt: DateTime.now());
     when(() => mockRepo.toggleUserStatus('3')).thenAnswer((_) async => Right(u));
     final res = await toggleStatus('3');
     expect(res.isRight(), isTrue);

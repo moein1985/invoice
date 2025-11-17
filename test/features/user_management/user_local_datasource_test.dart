@@ -6,6 +6,7 @@ import 'package:invoice/core/constants/hive_boxes.dart';
 import 'package:invoice/core/error/exceptions.dart';
 import 'package:invoice/features/auth/data/models/user_model.dart';
 import 'package:invoice/features/user_management/data/datasources/user_local_datasource.dart';
+import 'package:invoice/core/enums/user_role.dart';
 
 void main() {
   group('UserLocalDataSourceImpl', () {
@@ -33,7 +34,7 @@ void main() {
         username: 'bob',
         password: 'pass',
         fullName: 'Bob',
-        role: 'user',
+        role: 'employee',
       );
 
       final users = await ds.getUsers();
@@ -43,14 +44,14 @@ void main() {
     });
 
     test('createUser duplicates username throws', () async {
-      await ds.createUser(username: 'bob', password: 'p', fullName: 'Bob', role: 'user');
+      await ds.createUser(username: 'bob', password: 'p', fullName: 'Bob', role: 'employee');
       expect(
-          () => ds.createUser(username: 'bob', password: 'x', fullName: 'B2', role: 'user'),
+          () => ds.createUser(username: 'bob', password: 'x', fullName: 'B2', role: 'employee'),
           throwsA(isA<CacheException>()));
     });
 
     test('getUserById returns and updateUser works', () async {
-      final u = await ds.createUser(username: 'a', password: '1', fullName: 'A', role: 'user');
+      final u = await ds.createUser(username: 'a', password: '1', fullName: 'A', role: 'employee');
       final fetched = await ds.getUserById(u.id);
       expect(fetched.username, equals('a'));
 
@@ -59,14 +60,14 @@ void main() {
     });
 
     test('updateUser duplicate username throws', () async {
-      await ds.createUser(username: 'u1', password: '1', fullName: 'U1', role: 'user');
-      final u2 = await ds.createUser(username: 'u2', password: '2', fullName: 'U2', role: 'user');
+      await ds.createUser(username: 'u1', password: '1', fullName: 'U1', role: 'employee');
+      final u2 = await ds.createUser(username: 'u2', password: '2', fullName: 'U2', role: 'employee');
       expect(() => ds.updateUser(id: u2.id, username: 'u1'), throwsA(isA<CacheException>()));
     });
 
     test('searchUsers and toggle and delete', () async {
-      final a = await ds.createUser(username: 'alice', password: 'p', fullName: 'Alice', role: 'user');
-      final b = await ds.createUser(username: 'bob', password: 'p', fullName: 'Bob Smith', role: 'user');
+      final a = await ds.createUser(username: 'alice', password: 'p', fullName: 'Alice', role: 'employee');
+      final b = await ds.createUser(username: 'bob', password: 'p', fullName: 'Bob Smith', role: 'employee');
 
       final all = await ds.searchUsers('');
       expect(all.length, equals(2));

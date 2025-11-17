@@ -36,6 +36,7 @@ DocumentModel _sampleDoc({required String id, String type = 'invoice'}) {
     notes: null,
     createdAt: DateTime.now(),
     updatedAt: DateTime.now(),
+    approvalStatus: 'notRequired',
   );
 }
 

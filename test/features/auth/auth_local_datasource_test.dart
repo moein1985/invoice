@@ -6,6 +6,7 @@ import 'package:invoice/core/constants/hive_boxes.dart';
 import 'package:invoice/core/error/exceptions.dart';
 import 'package:invoice/features/auth/data/datasources/auth_local_datasource.dart';
 import 'package:invoice/features/auth/data/models/user_model.dart';
+import 'package:invoice/core/enums/user_role.dart';
 
 void main() {
   group('AuthLocalDataSourceImpl', () {
@@ -41,7 +42,7 @@ void main() {
         username: 'test',
         password: 'pass',
         fullName: 'Test',
-        role: 'user',
+        role: 'employee',
         isActive: true,
         createdAt: DateTime.now(),
       );
@@ -61,7 +62,7 @@ void main() {
         username: 'u',
         password: 'p',
         fullName: 'U',
-        role: 'user',
+        role: 'employee',
         isActive: true,
         createdAt: DateTime.now(),
       );
@@ -88,7 +89,7 @@ void main() {
         username: 'cur',
         password: 'p',
         fullName: 'Cur',
-        role: 'user',
+        role: 'employee',
         isActive: true,
         createdAt: DateTime.now(),
       );

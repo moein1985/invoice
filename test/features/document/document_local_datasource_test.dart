@@ -58,6 +58,7 @@ void main() {
         notes: 'note',
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        approvalStatus: 'notRequired',
       );
 
       await ds.createDocument(doc);
@@ -96,6 +97,7 @@ void main() {
         notes: null,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        approvalStatus: 'notRequired',
       );
 
       await ds.createDocument(doc);
@@ -131,6 +133,7 @@ void main() {
         notes: 'special',
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        approvalStatus: 'notRequired',
       );
 
       await ds.createDocument(proforma);
@@ -170,6 +173,7 @@ void main() {
         notes: null,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        approvalStatus: 'notRequired',
       );
 
       await ds.createDocument(pro);

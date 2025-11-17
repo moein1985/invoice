@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/enums/document_type.dart';
 import '../../../../core/enums/document_status.dart';
+import '../../../../core/enums/approval_status.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/utils/date_utils.dart' as date_utils;
 import '../../../../core/utils/number_formatter.dart';
@@ -250,13 +251,37 @@ class _DocumentListPageState extends State<DocumentListPage> with SingleTickerPr
                           ),
                         ),
                         if (doc.documentType == DocumentType.tempProforma)
-                          const PopupMenuItem(
-                            value: 'convert',
+                          PopupMenuItem(
+                            value: doc.approvalStatus == ApprovalStatus.pending 
+                              ? 'pending' 
+                              : doc.approvalStatus == ApprovalStatus.rejected
+                              ? 'rejected'
+                              : 'convert',
                             child: Row(
                               children: [
-                                Icon(Icons.transform),
-                                SizedBox(width: 8),
-                                Text('تبدیل به پیش‌فاکتور'),
+                                Icon(
+                                  doc.approvalStatus == ApprovalStatus.pending
+                                    ? Icons.schedule
+                                    : doc.approvalStatus == ApprovalStatus.rejected
+                                    ? Icons.close
+                                    : Icons.transform,
+                                  color: doc.approvalStatus == ApprovalStatus.rejected
+                                    ? AppColors.error
+                                    : null,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  doc.approvalStatus == ApprovalStatus.pending
+                                    ? 'منتظر تأیید'
+                                    : doc.approvalStatus == ApprovalStatus.rejected
+                                    ? 'رد شده'
+                                    : 'تبدیل به پیش‌فاکتور',
+                                  style: TextStyle(
+                                    color: doc.approvalStatus == ApprovalStatus.rejected
+                                      ? AppColors.error
+                                      : null,
+                                  ),
+                                ),
                               ],
                             ),
                           ),

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:invoice/core/enums/document_type.dart';
 import 'package:invoice/core/enums/document_status.dart';
+import 'package:invoice/core/enums/approval_status.dart';
 import 'package:invoice/features/document/domain/entities/document_entity.dart';
 import 'package:invoice/features/document/domain/entities/document_item_entity.dart';
 import 'package:invoice/features/document/domain/repositories/document_repository.dart';
@@ -44,6 +45,7 @@ void main() {
       notes: null,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      approvalStatus: ApprovalStatus.notRequired,
     );
 
     when(() => mockRepo.createDocument(any())).thenAnswer((_) async => Right(doc));

@@ -32,6 +32,10 @@ import 'features/document/presentation/bloc/document_bloc.dart';
 import 'features/document/presentation/pages/document_list_page.dart';
 import 'features/document/presentation/pages/document_form_page.dart';
 import 'features/document/presentation/pages/document_preview_page.dart';
+import 'features/document/presentation/bloc/approval_bloc.dart';
+import 'features/document/presentation/bloc/approval_event.dart';
+import 'features/document/presentation/pages/approval_queue_page.dart';
+import 'core/services/approval_polling_service.dart';
 import 'core/enums/document_type.dart';
 import 'injection_container.dart' as di;
 
@@ -130,8 +134,28 @@ bool get _isDesktop {
   }
 }
 
-class MainApp extends StatelessWidget {
+class MainApp extends StatefulWidget {
   const MainApp({super.key});
+
+  @override
+  State<MainApp> createState() => _MainAppState();
+}
+
+class _MainAppState extends State<MainApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Start polling service
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      di.sl<ApprovalPollingService>().start();
+    });
+  }
+
+  @override
+  void dispose() {
+    di.sl<ApprovalPollingService>().stop();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -195,6 +219,10 @@ class MainApp extends StatelessWidget {
               BlocProvider(create: (_) => di.sl<CustomerBloc>()),
             ],
             child: const DocumentListPage(),
+          ),
+          '/approvals': (context) => BlocProvider(
+            create: (_) => di.sl<ApprovalBloc>()..add(LoadPendingApprovals()),
+            child: const ApprovalQueuePage(),
           ),
           '/documents/create/invoice': (context) => MultiBlocProvider(
             providers: [

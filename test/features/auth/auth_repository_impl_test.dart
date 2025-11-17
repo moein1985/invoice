@@ -5,6 +5,7 @@ import 'package:invoice/core/error/failures.dart';
 import 'package:invoice/features/auth/data/datasources/auth_local_datasource.dart';
 import 'package:invoice/features/auth/data/models/user_model.dart';
 import 'package:invoice/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:invoice/core/enums/user_role.dart';
 
 class MockAuthLocal extends Mock implements AuthLocalDataSource {}
 
@@ -18,7 +19,7 @@ void main() {
   });
 
   test('login returns Right on success', () async {
-    final user = UserModel(id: 'u1', username: 'a', password: 'p', fullName: 'A', role: 'user', isActive: true, createdAt: DateTime.now());
+    final user = UserModel(id: 'u1', username: 'a', password: 'p', fullName: 'A', role: 'employee', isActive: true, createdAt: DateTime.now());
     when(() => mockLocal.login(username: 'a', password: 'p')).thenAnswer((_) async => user);
 
     final res = await repository.login(username: 'a', password: 'p');
@@ -39,7 +40,7 @@ void main() {
   });
 
   test('getCurrentUser returns Right(user?)', () async {
-    final user = UserModel(id: 'u2', username: 'b', password: 'p', fullName: 'B', role: 'user', isActive: true, createdAt: DateTime.now());
+    final user = UserModel(id: 'u2', username: 'b', password: 'p', fullName: 'B', role: 'employee', isActive: true, createdAt: DateTime.now());
     when(() => mockLocal.getCurrentUser()).thenAnswer((_) async => user);
     final res = await repository.getCurrentUser();
     expect(res.isRight(), isTrue);

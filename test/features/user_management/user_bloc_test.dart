@@ -11,6 +11,7 @@ import 'package:invoice/features/user_management/domain/usecases/search_users_us
 import 'package:invoice/features/user_management/domain/usecases/toggle_user_status_usecase.dart';
 import 'package:invoice/features/auth/domain/entities/user_entity.dart';
 import 'package:dartz/dartz.dart';
+import 'package:invoice/core/enums/user_role.dart';
 
 class MockGetUsers extends Mock implements GetUsersUseCase {}
 class MockCreateUser extends Mock implements CreateUserUseCase {}
@@ -47,7 +48,7 @@ void main() {
 
   test('emits [UserLoading, UsersLoaded] when load users succeeds', () async {
     final users = [
-      UserEntity(id: '1', username: 'u1', password: '', fullName: 'U1', role: 'user', isActive: true, createdAt: DateTime.now())
+      UserEntity(id: '1', username: 'u1', password: '', fullName: 'U1', role: UserRole.employee, isActive: true, createdAt: DateTime.now())
     ];
     when(() => mockGetUsers()).thenAnswer((_) async => Right(users));
 
@@ -58,12 +59,12 @@ void main() {
   });
 
   test('emits [UserLoading, UserOperationSuccess] when create user succeeds', () async {
-    final user = UserEntity(id: '2', username: 'u2', password: '', fullName: 'U2', role: 'user', isActive: true, createdAt: DateTime.now());
+    final user = UserEntity(id: '2', username: 'u2', password: '', fullName: 'U2', role: UserRole.employee, isActive: true, createdAt: DateTime.now());
     when(() => mockCreateUser(username: any(named: 'username'), password: any(named: 'password'), fullName: any(named: 'fullName'), role: any(named: 'role'))).thenAnswer((_) async => Right(user));
 
     final expected = [const UserLoading(), const UserOperationSuccess('کاربر با موفقیت ایجاد شد')];
     expectLater(bloc.stream, emitsInOrder(expected));
 
-    bloc.add(const CreateUser(username: 'u2', password: 'p', fullName: 'U2', role: 'user'));
+    bloc.add(const CreateUser(username: 'u2', password: 'p', fullName: 'U2', role: 'employee'));
   });
 }

@@ -20,6 +20,11 @@ class ConvertDocumentUseCase {
       return const Left(ValidationFailure('این نوع سند قابل تبدیل نیست'));
     }
 
+    // بررسی approval status
+    if (document.requiresApproval && document.approvalStatus != ApprovalStatus.approved) {
+      return const Left(ValidationFailure('این سند نیاز به تأیید سرپرست دارد'));
+    }
+
     try {
       // بررسی اینکه قبلا تبدیل شده یا نه (آیا سند دیگری با convertedFromId این سند وجود دارد)
       final allDocsResult = await repository.getDocuments(document.userId);

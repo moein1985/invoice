@@ -5,6 +5,7 @@ import 'package:invoice/core/error/failures.dart';
 import 'package:invoice/features/auth/data/models/user_model.dart';
 import 'package:invoice/features/user_management/data/datasources/user_local_datasource.dart';
 import 'package:invoice/features/user_management/data/repositories/user_repository_impl.dart';
+import 'package:invoice/core/enums/user_role.dart';
 
 class MockUserLocalDataSource extends Mock implements UserLocalDataSource {}
 
@@ -24,7 +25,7 @@ void main() {
         username: 'a',
         password: 'p',
         fullName: 'A',
-        role: 'user',
+        role: 'employee',
         isActive: true,
         createdAt: DateTime.now(),
       );
@@ -51,14 +52,14 @@ void main() {
         username: 'bob',
         password: 'p',
         fullName: 'Bob',
-        role: 'user',
+        role: 'employee',
         isActive: true,
         createdAt: DateTime.now(),
       );
       when(() => mockLocal.createUser(username: any(named: 'username'), password: any(named: 'password'), fullName: any(named: 'fullName'), role: any(named: 'role')))
           .thenAnswer((_) async => u);
 
-      final res = await repository.createUser(username: 'bob', password: 'p', fullName: 'Bob', role: 'user');
+      final res = await repository.createUser(username: 'bob', password: 'p', fullName: 'Bob', role: 'employee');
       expect(res.isRight(), isTrue);
       res.fold((l) => fail('expected right'), (r) => expect(r.username, equals('bob')));
     });

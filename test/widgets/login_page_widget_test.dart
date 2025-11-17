@@ -11,11 +11,12 @@ import 'package:invoice/features/auth/domain/repositories/auth_repository.dart';
 import 'package:dartz/dartz.dart';
 import 'package:invoice/features/auth/domain/entities/user_entity.dart';
 import 'package:invoice/core/error/failures.dart';
+import 'package:invoice/core/enums/user_role.dart';
 
 class _FakeAuthRepository implements AuthRepository {
   @override
   Future<Either<Failure, UserEntity>> login({required String username, required String password}) async {
-    return Right(UserEntity(id: 'u1', username: username, password: '', fullName: 'User', role: 'user', isActive: true, createdAt: DateTime.now()));
+    return Right(UserEntity(id: 'u1', username: username, password: '', fullName: 'User', role: UserRole.employee, isActive: true, createdAt: DateTime.now()));
   }
 
   @override

@@ -162,6 +162,14 @@ class _DashboardPageState extends State<DashboardPage> {
             },
           ),
           ListTile(
+            leading: const Icon(Icons.approval),
+            title: const Text('کارتابل تأیید'),
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).pushNamed('/approvals');
+            },
+          ),
+          ListTile(
             leading: const Icon(Icons.bar_chart),
             title: const Text('آمار و گزارشات'),
             onTap: () {

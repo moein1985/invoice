@@ -51,6 +51,7 @@ import 'features/document/data/repositories/document_repository_impl.dart';
 import 'features/document/data/datasources/document_local_datasource.dart';
 import 'features/export/services/pdf_export_service.dart';
 import 'features/export/services/excel_export_service.dart';
+import 'core/services/approval_polling_service.dart';
 
 final sl = GetIt.instance;
 bool _initialized = false;
@@ -223,4 +224,12 @@ Future<void> init() async {
   // Export Services
   sl.registerLazySingleton(() => PdfExportService());
   sl.registerLazySingleton(() => ExcelExportService());
+
+  // Approval Polling Service
+  sl.registerLazySingleton(
+    () => ApprovalPollingService(
+      getPendingApprovals: sl(),
+      authRepository: sl(),
+    ),
+  );
 }
