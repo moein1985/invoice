@@ -138,7 +138,7 @@ void main() {
 
       await ds.createDocument(proforma);
 
-      final results = await ds.searchDocuments(userId: 'u1', query: 'Widget');
+      final results = await ds.searchDocuments(userId: 'u1', query: 'special');
       expect(results.length, equals(1));
 
       final results2 = await ds.searchDocuments(userId: 'u1', type: 'proforma');

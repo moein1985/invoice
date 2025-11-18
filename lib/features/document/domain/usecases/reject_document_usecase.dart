@@ -2,7 +2,6 @@ import 'package:dartz/dartz.dart';
 import '../entities/document_entity.dart';
 import '../repositories/document_repository.dart';
 import '../../../../core/error/failures.dart';
-import '../../../../core/enums/approval_status.dart';
 
 class RejectDocumentUseCase {
   final DocumentRepository repository;
@@ -14,25 +13,6 @@ class RejectDocumentUseCase {
     required String rejectedBy,
     required String reason,
   }) async {
-    try {
-      final documentResult = await repository.getDocumentById(documentId);
-      
-      return documentResult.fold(
-        (failure) => Left(failure),
-        (document) async {
-          // رد سند
-          final updatedDocument = document.copyWith(
-            approvalStatus: ApprovalStatus.rejected,
-            approvedBy: rejectedBy,
-            approvedAt: DateTime.now(),
-            rejectionReason: reason,
-          );
-          
-          return await repository.updateDocument(updatedDocument);
-        },
-      );
-    } catch (e) {
-      return Left(CacheFailure('خطا در رد سند'));
-    }
+    return await repository.rejectDocument(documentId, rejectedBy, reason);
   }
 }

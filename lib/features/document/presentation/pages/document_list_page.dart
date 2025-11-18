@@ -13,11 +13,13 @@ import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/error_widget.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/utils/window_arguments.dart';
+import '../../../../injection_container.dart' as di;
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../customer/domain/entities/customer_entity.dart';
 import '../../../customer/presentation/bloc/customer_bloc.dart';
 import '../../domain/entities/document_entity.dart';
+import '../../domain/usecases/request_approval_usecase.dart';
 import '../bloc/document_bloc.dart';
 import '../bloc/document_event.dart';
 import '../bloc/document_state.dart';
@@ -226,6 +228,15 @@ class _DocumentListPageState extends State<DocumentListPage> with SingleTickerPr
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+                        if (doc.documentType == DocumentType.tempProforma && doc.approvalStatus != ApprovalStatus.notRequired)
+                          Text(
+                            'تأیید: ${_getApprovalStatusText(doc.approvalStatus)}',
+                            style: TextStyle(
+                              color: _getApprovalStatusColor(doc.approvalStatus),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
                       ],
                     ),
                     trailing: PopupMenuButton(
@@ -250,41 +261,58 @@ class _DocumentListPageState extends State<DocumentListPage> with SingleTickerPr
                             ],
                           ),
                         ),
+                        // برای پیش‌فاکتور موقت
                         if (doc.documentType == DocumentType.tempProforma)
-                          PopupMenuItem(
-                            value: doc.approvalStatus == ApprovalStatus.pending 
-                              ? 'pending' 
-                              : doc.approvalStatus == ApprovalStatus.rejected
-                              ? 'rejected'
-                              : 'convert',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  doc.approvalStatus == ApprovalStatus.pending
-                                    ? Icons.schedule
-                                    : doc.approvalStatus == ApprovalStatus.rejected
-                                    ? Icons.close
-                                    : Icons.transform,
-                                  color: doc.approvalStatus == ApprovalStatus.rejected
-                                    ? AppColors.error
-                                    : null,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  doc.approvalStatus == ApprovalStatus.pending
-                                    ? 'منتظر تأیید'
-                                    : doc.approvalStatus == ApprovalStatus.rejected
-                                    ? 'رد شده'
-                                    : 'تبدیل به پیش‌فاکتور',
-                                  style: TextStyle(
-                                    color: doc.approvalStatus == ApprovalStatus.rejected
-                                      ? AppColors.error
-                                      : null,
-                                  ),
-                                ),
-                              ],
+                          // اگر هنوز درخواست تأیید نشده - دکمه ارسال درخواست
+                          if (doc.approvalStatus == ApprovalStatus.notRequired)
+                            const PopupMenuItem(
+                              value: 'requestApproval',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.send, color: Colors.blue),
+                                  SizedBox(width: 8),
+                                  Text('درخواست تأیید', style: TextStyle(color: Colors.blue)),
+                                ],
+                              ),
+                            )
+                          // اگر منتظر تأیید است - فقط نمایش وضعیت
+                          else if (doc.approvalStatus == ApprovalStatus.pending)
+                            const PopupMenuItem(
+                              value: 'pending',
+                              enabled: false,
+                              child: Row(
+                                children: [
+                                  Icon(Icons.schedule, color: Colors.orange),
+                                  SizedBox(width: 8),
+                                  Text('منتظر تأیید...', style: TextStyle(color: Colors.orange)),
+                                ],
+                              ),
+                            )
+                          // اگر رد شده - فقط نمایش وضعیت
+                          else if (doc.approvalStatus == ApprovalStatus.rejected)
+                            const PopupMenuItem(
+                              value: 'rejected',
+                              enabled: false,
+                              child: Row(
+                                children: [
+                                  Icon(Icons.close, color: AppColors.error),
+                                  SizedBox(width: 8),
+                                  Text('رد شده', style: TextStyle(color: AppColors.error)),
+                                ],
+                              ),
+                            )
+                          // اگر تأیید شده - دکمه تبدیل
+                          else if (doc.approvalStatus == ApprovalStatus.approved)
+                            const PopupMenuItem(
+                              value: 'convert',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.transform, color: Colors.green),
+                                  SizedBox(width: 8),
+                                  Text('تبدیل به پیش‌فاکتور', style: TextStyle(color: Colors.green)),
+                                ],
+                              ),
                             ),
-                          ),
                         if (doc.documentType == DocumentType.proforma)
                           const PopupMenuItem(
                             value: 'convert',
@@ -316,6 +344,10 @@ class _DocumentListPageState extends State<DocumentListPage> with SingleTickerPr
                           case 'edit':
                             AppLogger.debug('Action=edit id=${doc.id}', 'DocumentList');
                             _navigateToForm(documentId: doc.id);
+                            break;
+                          case 'requestApproval':
+                            AppLogger.debug('Action=requestApproval id=${doc.id}', 'DocumentList');
+                            _requestApproval(doc);
                             break;
                           case 'convert':
                             AppLogger.debug('Action=convert id=${doc.id} currentType=${doc.documentType}', 'DocumentList');
@@ -568,6 +600,87 @@ class _DocumentListPageState extends State<DocumentListPage> with SingleTickerPr
         return 'پیش‌فاکتور با موفقیت به فاکتور تبدیل شد';
       default:
         return 'سند با موفقیت تبدیل شد';
+    }
+  }
+
+  Future<void> _requestApproval(DocumentEntity document) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('درخواست تأیید'),
+        content: Text(
+          'آیا می‌خواهید پیش‌فاکتور موقت شماره ${document.documentNumber} را برای تأیید سرپرست ارسال کنید؟\n\n'
+          'پس از ارسال، این سند در کارتابل تأیید قرار می‌گیرد.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('لغو'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+            child: const Text('ارسال درخواست'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      AppLogger.info('Requesting approval for document id=${document.id}', 'DocumentList');
+      
+      // استفاده مستقیم از RequestApprovalUseCase
+      final requestApprovalUseCase = di.sl<RequestApprovalUseCase>();
+      final result = await requestApprovalUseCase(documentId: document.id);
+      
+      if (mounted) {
+        result.fold(
+          (failure) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('خطا: ${failure.message}'),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          },
+          (updatedDocument) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('✓ درخواست تأیید ارسال شد. این سند اکنون در کارتابل تأیید قرار دارد.'),
+                backgroundColor: AppColors.success,
+                duration: Duration(seconds: 3),
+              ),
+            );
+            _loadDocuments();
+          },
+        );
+      }
+    }
+  }
+
+  String _getApprovalStatusText(ApprovalStatus status) {
+    switch (status) {
+      case ApprovalStatus.notRequired:
+        return 'نیازی به تأیید ندارد';
+      case ApprovalStatus.pending:
+        return 'منتظر تأیید';
+      case ApprovalStatus.approved:
+        return 'تأیید شده ✓';
+      case ApprovalStatus.rejected:
+        return 'رد شده ✗';
+    }
+  }
+
+  Color _getApprovalStatusColor(ApprovalStatus status) {
+    switch (status) {
+      case ApprovalStatus.notRequired:
+        return Colors.grey;
+      case ApprovalStatus.pending:
+        return Colors.orange;
+      case ApprovalStatus.approved:
+        return Colors.green;
+      case ApprovalStatus.rejected:
+        return AppColors.error;
     }
   }
 

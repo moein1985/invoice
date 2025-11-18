@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'features/auth/data/datasources/auth_local_datasource.dart';
+import 'features/auth/data/datasources/auth_remote_datasource.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/domain/usecases/login_usecase.dart';
@@ -12,6 +13,7 @@ import 'features/dashboard/domain/repositories/dashboard_repository.dart';
 import 'features/dashboard/domain/usecases/get_dashboard_data_usecase.dart';
 import 'features/dashboard/presentation/bloc/dashboard_bloc.dart';
 import 'features/user_management/data/datasources/user_local_datasource.dart';
+import 'features/user_management/data/datasources/user_remote_datasource.dart';
 import 'features/user_management/data/repositories/user_repository_impl.dart';
 import 'features/user_management/domain/repositories/user_repository.dart';
 import 'features/user_management/domain/usecases/create_user_usecase.dart';
@@ -22,6 +24,7 @@ import 'features/user_management/domain/usecases/toggle_user_status_usecase.dart
 import 'features/user_management/domain/usecases/update_user_usecase.dart';
 import 'features/user_management/presentation/bloc/user_bloc.dart';
 import 'features/customer/data/datasources/customer_local_datasource.dart';
+import 'features/customer/data/datasources/customer_remote_datasource.dart';
 import 'features/customer/data/repositories/customer_repository_impl.dart';
 import 'features/customer/domain/repositories/customer_repository.dart';
 import 'features/customer/domain/usecases/create_customer_usecase.dart';
@@ -49,8 +52,10 @@ import 'features/document/presentation/bloc/approval_bloc.dart';
 import 'features/document/domain/repositories/document_repository.dart';
 import 'features/document/data/repositories/document_repository_impl.dart';
 import 'features/document/data/datasources/document_local_datasource.dart';
+import 'features/document/data/datasources/document_remote_datasource.dart';
 import 'features/export/services/pdf_export_service.dart';
 import 'features/export/services/excel_export_service.dart';
+import 'core/services/api_client.dart';
 import 'core/services/approval_polling_service.dart';
 
 final sl = GetIt.instance;
@@ -62,6 +67,8 @@ Future<void> init() async {
     return;
   }
   _initialized = true;
+  // Core - Api Client
+  sl.registerLazySingleton(() => ApiClient());
   //! Features - Auth
   // Bloc
   sl.registerLazySingleton(
@@ -79,12 +86,15 @@ Future<void> init() async {
 
   // Repository
   sl.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(localDataSource: sl()),
+    () => AuthRepositoryImpl(localDataSource: sl(), remoteDataSource: sl()),
   );
 
   // Data sources
   sl.registerLazySingleton<AuthLocalDataSource>(
     () => AuthLocalDataSourceImpl(),
+  );
+  sl.registerLazySingleton<AuthRemoteDataSource>(
+    () => AuthRemoteDataSourceImpl(dio: sl<ApiClient>().dio),
   );
 
   //! Features - Dashboard
@@ -131,12 +141,15 @@ Future<void> init() async {
 
   // Repository
   sl.registerLazySingleton<UserRepository>(
-    () => UserRepositoryImpl(localDataSource: sl()),
+    () => UserRepositoryImpl(localDataSource: sl(), remoteDataSource: sl()),
   );
 
   // Data sources
   sl.registerLazySingleton<UserLocalDataSource>(
     () => UserLocalDataSourceImpl(),
+  );
+  sl.registerLazySingleton<UserRemoteDataSource>(
+    () => UserRemoteDataSourceImpl(dio: sl<ApiClient>().dio),
   );
 
   //! Features - Customer Management
@@ -162,12 +175,15 @@ Future<void> init() async {
 
   // Repository
   sl.registerLazySingleton<CustomerRepository>(
-    () => CustomerRepositoryImpl(localDataSource: sl()),
+    () => CustomerRepositoryImpl(localDataSource: sl(), remoteDataSource: sl()),
   );
 
   // Data sources
   sl.registerLazySingleton<CustomerLocalDataSource>(
     () => CustomerLocalDataSourceImpl(),
+  );
+  sl.registerLazySingleton<CustomerRemoteDataSource>(
+    () => CustomerRemoteDataSourceImpl(dio: sl<ApiClient>().dio),
   );
 
   //! Features - Document Management
@@ -213,12 +229,15 @@ Future<void> init() async {
 
   // Repository
   sl.registerLazySingleton<DocumentRepository>(
-    () => DocumentRepositoryImpl(localDataSource: sl()),
+    () => DocumentRepositoryImpl(localDataSource: sl(), remoteDataSource: sl()),
   );
 
   // Data sources
   sl.registerLazySingleton<DocumentLocalDataSource>(
     () => DocumentLocalDataSourceImpl(),
+  );
+  sl.registerLazySingleton<DocumentRemoteDataSource>(
+    () => DocumentRemoteDataSourceImpl(dio: sl<ApiClient>().dio),
   );
 
   // Export Services

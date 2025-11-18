@@ -3,19 +3,22 @@ import 'package:mocktail/mocktail.dart';
 import 'package:invoice/core/error/exceptions.dart';
 import 'package:invoice/core/error/failures.dart';
 import 'package:invoice/features/auth/data/datasources/auth_local_datasource.dart';
+import 'package:invoice/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:invoice/features/auth/data/models/user_model.dart';
 import 'package:invoice/features/auth/data/repositories/auth_repository_impl.dart';
-import 'package:invoice/core/enums/user_role.dart';
 
 class MockAuthLocal extends Mock implements AuthLocalDataSource {}
+class MockAuthRemote extends Mock implements AuthRemoteDataSource {}
 
 void main() {
   late MockAuthLocal mockLocal;
+  late MockAuthRemote mockRemote;
   late AuthRepositoryImpl repository;
 
   setUp(() {
     mockLocal = MockAuthLocal();
-    repository = AuthRepositoryImpl(localDataSource: mockLocal);
+    mockRemote = MockAuthRemote();
+    repository = AuthRepositoryImpl(localDataSource: mockLocal, remoteDataSource: mockRemote);
   });
 
   test('login returns Right on success', () async {
@@ -34,14 +37,14 @@ void main() {
   });
 
   test('logout returns Right on success', () async {
-    when(() => mockLocal.logout()).thenAnswer((_) async => Future.value());
+    when(() => mockRemote.logout()).thenAnswer((_) async => Future.value());
     final res = await repository.logout();
     expect(res.isRight(), isTrue);
   });
 
   test('getCurrentUser returns Right(user?)', () async {
     final user = UserModel(id: 'u2', username: 'b', password: 'p', fullName: 'B', role: 'employee', isActive: true, createdAt: DateTime.now());
-    when(() => mockLocal.getCurrentUser()).thenAnswer((_) async => user);
+    when(() => mockRemote.me()).thenAnswer((_) async => user);
     final res = await repository.getCurrentUser();
     expect(res.isRight(), isTrue);
   });

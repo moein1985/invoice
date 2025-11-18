@@ -4,18 +4,21 @@ import 'package:invoice/core/error/exceptions.dart';
 import 'package:invoice/core/error/failures.dart';
 import 'package:invoice/features/auth/data/models/user_model.dart';
 import 'package:invoice/features/user_management/data/datasources/user_local_datasource.dart';
+import 'package:invoice/features/user_management/data/datasources/user_remote_datasource.dart';
 import 'package:invoice/features/user_management/data/repositories/user_repository_impl.dart';
-import 'package:invoice/core/enums/user_role.dart';
 
 class MockUserLocalDataSource extends Mock implements UserLocalDataSource {}
+class MockUserRemoteDataSource extends Mock implements UserRemoteDataSource {}
 
 void main() {
   late MockUserLocalDataSource mockLocal;
+  late MockUserRemoteDataSource mockRemote;
   late UserRepositoryImpl repository;
 
   setUp(() {
     mockLocal = MockUserLocalDataSource();
-    repository = UserRepositoryImpl(localDataSource: mockLocal);
+    mockRemote = MockUserRemoteDataSource();
+    repository = UserRepositoryImpl(localDataSource: mockLocal, remoteDataSource: mockRemote);
   });
 
   group('getUsers', () {

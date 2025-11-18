@@ -6,7 +6,6 @@ import 'package:invoice/core/constants/hive_boxes.dart';
 import 'package:invoice/core/error/exceptions.dart';
 import 'package:invoice/features/auth/data/datasources/auth_local_datasource.dart';
 import 'package:invoice/features/auth/data/models/user_model.dart';
-import 'package:invoice/core/enums/user_role.dart';
 
 void main() {
   group('AuthLocalDataSourceImpl', () {

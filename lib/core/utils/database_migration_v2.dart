@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import '../../features/document/data/models/document_model.dart';
 import '../../features/document/data/models/document_item_model.dart';
@@ -12,33 +13,47 @@ class DatabaseMigrationV2 {
   
   /// اجرای migration
   static Future<void> migrate() async {
-    print('🔄 شروع Migration به نسخه 2.0.0...');
+    if (kDebugMode) {
+      print('🔄 شروع Migration به نسخه 2.0.0...');
+    }
     
     try {
       // 1. Migration برای Documents
       await _migrateDocuments();
       
-      print('✅ Migration با موفقیت انجام شد!');
-      print('📝 توجه: لطفاً برنامه را restart کنید.');
+      if (kDebugMode) {
+        print('✅ Migration با موفقیت انجام شد!');
+      }
+      if (kDebugMode) {
+        print('📝 توجه: لطفاً برنامه را restart کنید.');
+      }
     } catch (e) {
-      print('❌ خطا در Migration: $e');
+      if (kDebugMode) {
+        print('❌ خطا در Migration: $e');
+      }
       rethrow;
     }
   }
   
   static Future<void> _migrateDocuments() async {
-    print('📦 در حال Migration اسناد...');
+    if (kDebugMode) {
+      print('📦 در حال Migration اسناد...');
+    }
     
     // باز کردن باکس Documents
     final box = await Hive.openBox<DocumentModel>('documents');
     final documents = box.values.toList();
     
     if (documents.isEmpty) {
-      print('ℹ️ هیچ سندی برای Migration وجود ندارد.');
+      if (kDebugMode) {
+        print('ℹ️ هیچ سندی برای Migration وجود ندارد.');
+      }
       return;
     }
     
-    print('📊 تعداد اسناد: ${documents.length}');
+    if (kDebugMode) {
+      print('📊 تعداد اسناد: ${documents.length}');
+    }
     
     // پاک کردن باکس (backup قبلاً گرفته شده)
     await box.clear();
@@ -95,11 +110,15 @@ class DatabaseMigrationV2 {
         await box.add(newDoc);
         migratedCount++;
       } catch (e) {
-        print('⚠️ خطا در Migration سند ${oldDoc.documentNumber}: $e');
+        if (kDebugMode) {
+          print('⚠️ خطا در Migration سند ${oldDoc.documentNumber}: $e');
+        }
       }
     }
     
-    print('✅ $migratedCount سند با موفقیت منتقل شد.');
+    if (kDebugMode) {
+      print('✅ $migratedCount سند با موفقیت منتقل شد.');
+    }
   }
   
   /// دریافت unitPrice از آیتم قدیمی (برای سازگاری با ساختار قبلی)
@@ -113,14 +132,18 @@ class DatabaseMigrationV2 {
       // برای داده‌های خام Hive
       return 0.0;
     } catch (e) {
-      print('⚠️ خطا در خواندن قیمت: $e');
+      if (kDebugMode) {
+        print('⚠️ خطا در خواندن قیمت: $e');
+      }
       return 0.0;
     }
   }
   
   /// ایجاد Backup از دیتابیس
   static Future<void> createBackup() async {
-    print('💾 در حال ایجاد Backup...');
+    if (kDebugMode) {
+      print('💾 در حال ایجاد Backup...');
+    }
     
     try {
       final box = await Hive.openBox<DocumentModel>('documents');
@@ -134,22 +157,30 @@ class DatabaseMigrationV2 {
         await backupBox.put('doc_$i', documents[i].toEntity().toJson());
       }
       
-      print('✅ Backup با موفقیت ایجاد شد: ${documents.length} سند');
+      if (kDebugMode) {
+        print('✅ Backup با موفقیت ایجاد شد: ${documents.length} سند');
+      }
     } catch (e) {
-      print('❌ خطا در ایجاد Backup: $e');
+      if (kDebugMode) {
+        print('❌ خطا در ایجاد Backup: $e');
+      }
       rethrow;
     }
   }
   
   /// بازگردانی از Backup
   static Future<void> restoreFromBackup() async {
-    print('♻️ در حال بازگردانی از Backup...');
+    if (kDebugMode) {
+      print('♻️ در حال بازگردانی از Backup...');
+    }
     
     try {
       final backupBox = await Hive.openBox('documents_backup_v1');
       
       if (backupBox.isEmpty) {
-        print('⚠️ هیچ Backup‌ای وجود ندارد!');
+        if (kDebugMode) {
+          print('⚠️ هیچ Backup‌ای وجود ندارد!');
+        }
         return;
       }
       
@@ -161,13 +192,19 @@ class DatabaseMigrationV2 {
         final jsonData = backupBox.get('doc_$i');
         if (jsonData != null) {
           // اینجا باید داده JSON را به Model تبدیل کنید
-          print('ℹ️ داده $i بازگردانی شد (نیاز به تبدیل دستی)');
+          if (kDebugMode) {
+            print('ℹ️ داده $i بازگردانی شد (نیاز به تبدیل دستی)');
+          }
         }
       }
       
-      print('✅ Backup بازگردانی شد.');
+      if (kDebugMode) {
+        print('✅ Backup بازگردانی شد.');
+      }
     } catch (e) {
-      print('❌ خطا در بازگردانی Backup: $e');
+      if (kDebugMode) {
+        print('❌ خطا در بازگردانی Backup: $e');
+      }
       rethrow;
     }
   }

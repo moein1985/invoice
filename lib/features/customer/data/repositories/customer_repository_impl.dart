@@ -4,18 +4,25 @@ import '../../../../core/error/failures.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../../domain/repositories/customer_repository.dart';
 import '../datasources/customer_local_datasource.dart';
+import '../datasources/customer_remote_datasource.dart';
 import '../models/customer_model.dart';
 
 class CustomerRepositoryImpl implements CustomerRepository {
   final CustomerLocalDataSource localDataSource;
+  final CustomerRemoteDataSource remoteDataSource;
 
-  CustomerRepositoryImpl({required this.localDataSource});
+  CustomerRepositoryImpl({required this.localDataSource, required this.remoteDataSource});
 
   @override
   Future<Either<Failure, List<CustomerEntity>>> getCustomers() async {
     try {
-      final customers = await localDataSource.getCustomers();
-      return Right(customers.map((model) => model.toEntity()).toList());
+      try {
+        final customers = await remoteDataSource.getCustomers();
+        return Right(customers.map((model) => model.toEntity()).toList());
+      } catch (_) {
+        final customers = await localDataSource.getCustomers();
+        return Right(customers.map((model) => model.toEntity()).toList());
+      }
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     }
@@ -24,8 +31,19 @@ class CustomerRepositoryImpl implements CustomerRepository {
   @override
   Future<Either<Failure, List<CustomerEntity>>> searchCustomers(String query) async {
     try {
-      final customers = await localDataSource.searchCustomers(query);
-      return Right(customers.map((model) => model.toEntity()).toList());
+      // Backend جستجوی مستقیم ندارد؛ از لیست و فیلتر
+      try {
+        final customers = await remoteDataSource.getCustomers();
+        final q = query.toLowerCase();
+        final filtered = customers.where((c) =>
+          c.name.toLowerCase().contains(q) || c.phone.contains(query) ||
+          (c.address?.toLowerCase().contains(q) ?? false)
+        ).toList();
+        return Right(filtered.map((e) => e.toEntity()).toList());
+      } catch (_) {
+        final customers = await localDataSource.searchCustomers(query);
+        return Right(customers.map((model) => model.toEntity()).toList());
+      }
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     }
@@ -34,8 +52,13 @@ class CustomerRepositoryImpl implements CustomerRepository {
   @override
   Future<Either<Failure, CustomerEntity>> getCustomerById(String id) async {
     try {
-      final customer = await localDataSource.getCustomerById(id);
-      return Right(customer.toEntity());
+      try {
+        final customer = await remoteDataSource.getCustomerById(id);
+        return Right(customer.toEntity());
+      } catch (_) {
+        final customer = await localDataSource.getCustomerById(id);
+        return Right(customer.toEntity());
+      }
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     }
@@ -44,9 +67,14 @@ class CustomerRepositoryImpl implements CustomerRepository {
   @override
   Future<Either<Failure, CustomerEntity>> createCustomer(CustomerEntity customer) async {
     try {
-      final customerModel = CustomerModel.fromEntity(customer);
-      final savedCustomer = await localDataSource.saveCustomer(customerModel);
-      return Right(savedCustomer.toEntity());
+      final m = CustomerModel.fromEntity(customer);
+      try {
+        final saved = await remoteDataSource.createCustomer(m);
+        return Right(saved.toEntity());
+      } catch (_) {
+        final saved = await localDataSource.saveCustomer(m);
+        return Right(saved.toEntity());
+      }
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     }
@@ -55,9 +83,14 @@ class CustomerRepositoryImpl implements CustomerRepository {
   @override
   Future<Either<Failure, CustomerEntity>> updateCustomer(CustomerEntity customer) async {
     try {
-      final customerModel = CustomerModel.fromEntity(customer);
-      final updatedCustomer = await localDataSource.updateCustomer(customerModel);
-      return Right(updatedCustomer.toEntity());
+      final m = CustomerModel.fromEntity(customer);
+      try {
+        final updated = await remoteDataSource.updateCustomer(m);
+        return Right(updated.toEntity());
+      } catch (_) {
+        final updatedCustomer = await localDataSource.updateCustomer(m);
+        return Right(updatedCustomer.toEntity());
+      }
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     }
@@ -66,7 +99,11 @@ class CustomerRepositoryImpl implements CustomerRepository {
   @override
   Future<Either<Failure, void>> deleteCustomer(String id) async {
     try {
-      await localDataSource.deleteCustomer(id);
+      try {
+        await remoteDataSource.deleteCustomer(id);
+      } catch (_) {
+        await localDataSource.deleteCustomer(id);
+      }
       return const Right(null);
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
@@ -76,8 +113,29 @@ class CustomerRepositoryImpl implements CustomerRepository {
   @override
   Future<Either<Failure, CustomerEntity>> toggleCustomerStatus(String id) async {
     try {
-      final updatedCustomer = await localDataSource.toggleCustomerStatus(id);
-      return Right(updatedCustomer.toEntity());
+      // از سرور با update isActive معکوس پیاده‌سازی می‌کنیم
+      try {
+        final current = await remoteDataSource.getCustomerById(id);
+        final toggled = CustomerModel(
+          id: current.id,
+          name: current.name,
+          phone: current.phone,
+          email: current.email,
+          address: current.address,
+          company: current.company,
+          nationalId: current.nationalId,
+          creditLimit: current.creditLimit,
+          currentDebt: current.currentDebt,
+          isActive: !current.isActive,
+          createdAt: current.createdAt,
+          lastTransaction: current.lastTransaction,
+        );
+        final updated = await remoteDataSource.updateCustomer(toggled);
+        return Right(updated.toEntity());
+      } catch (_) {
+        final updatedCustomer = await localDataSource.toggleCustomerStatus(id);
+        return Right(updatedCustomer.toEntity());
+      }
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     }
@@ -86,6 +144,7 @@ class CustomerRepositoryImpl implements CustomerRepository {
   @override
   Future<Either<Failure, CustomerEntity>> updateCustomerDebt(String id, double newDebt) async {
     try {
+      // سرور فعلاً فیلد بدهی ندارد؛ به حالت آفلاین برمی‌گردیم
       final updatedCustomer = await localDataSource.updateCustomerDebt(id, newDebt);
       return Right(updatedCustomer.toEntity());
     } on CacheException catch (e) {

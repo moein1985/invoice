@@ -36,4 +36,10 @@ abstract class DocumentRepository {
 
   /// دریافت شماره سند بعدی
   Future<Either<Failure, String>> getNextDocumentNumber(DocumentType type);
+
+  /// تأیید سند
+  Future<Either<Failure, DocumentEntity>> approveDocument(String documentId, String approvedBy);
+
+  /// رد سند
+  Future<Either<Failure, DocumentEntity>> rejectDocument(String documentId, String rejectedBy, String reason);
 }

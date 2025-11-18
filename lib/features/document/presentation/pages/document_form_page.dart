@@ -609,6 +609,8 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
       defaultProfitPercentage: defaultProfit,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      // پیش‌فاکتور موقت نیاز به تأیید دارد
+      requiresApproval: _selectedType == DocumentType.tempProforma,
       approvalStatus: ApprovalStatus.notRequired,
     );
 

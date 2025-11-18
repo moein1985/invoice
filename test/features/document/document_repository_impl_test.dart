@@ -2,11 +2,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:invoice/core/enums/document_type.dart';
 import 'package:invoice/features/document/data/datasources/document_local_datasource.dart';
+import 'package:invoice/features/document/data/datasources/document_remote_datasource.dart';
 import 'package:invoice/features/document/data/models/document_item_model.dart';
 import 'package:invoice/features/document/data/models/document_model.dart';
 import 'package:invoice/features/document/data/repositories/document_repository_impl.dart';
 
 class MockDocumentLocalDataSource extends Mock implements DocumentLocalDataSource {}
+class MockDocumentRemoteDataSource extends Mock implements DocumentRemoteDataSource {}
 
 DocumentModel _sampleDoc({required String id, String type = 'invoice'}) {
   final item = DocumentItemModel(
@@ -47,11 +49,13 @@ void main() {
   });
 
   late MockDocumentLocalDataSource mockLocal;
+  late MockDocumentRemoteDataSource mockRemote;
   late DocumentRepositoryImpl repository;
 
   setUp(() {
     mockLocal = MockDocumentLocalDataSource();
-    repository = DocumentRepositoryImpl(localDataSource: mockLocal);
+    mockRemote = MockDocumentRemoteDataSource();
+    repository = DocumentRepositoryImpl(localDataSource: mockLocal, remoteDataSource: mockRemote);
   });
 
   group('createDocument', () {

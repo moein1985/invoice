@@ -29,28 +29,44 @@ void main() async {
     }
     for (var boxName in boxes) {
       final boxExists = await Hive.boxExists(boxName);
-      print('  - $boxName: ${boxExists ? "✓ وجود دارد" : "✗ وجود ندارد"}');
+      if (kDebugMode) {
+        print('  - $boxName: ${boxExists ? "✓ وجود دارد" : "✗ وجود ندارد"}');
+      }
     }
     
-    print('\n⚠️  آیا مطمئن هستید که می‌خواهید تمام داده‌ها را پاک کنید؟');
-    print('این عملیات قابل بازگشت نیست!');
-    print('\nبرای ادامه "yes" تایپ کنید: ');
+    if (kDebugMode) {
+      print('\n⚠️  آیا مطمئن هستید که می‌خواهید تمام داده‌ها را پاک کنید؟');
+    }
+    if (kDebugMode) {
+      print('این عملیات قابل بازگشت نیست!');
+    }
+    if (kDebugMode) {
+      print('\nبرای ادامه "yes" تایپ کنید: ');
+    }
     
     final input = stdin.readLineSync();
     
     if (input?.toLowerCase() != 'yes') {
-      print('\n❌ عملیات لغو شد.');
+      if (kDebugMode) {
+        print('\n❌ عملیات لغو شد.');
+      }
       return;
     }
     
-    print('\n🔥 در حال پاک کردن...\n');
+    if (kDebugMode) {
+      print('\n🔥 در حال پاک کردن...\n');
+    }
     
     for (var boxName in boxes) {
       try {
         await Hive.deleteBoxFromDisk(boxName);
-        print('  ✅ $boxName پاک شد');
+        if (kDebugMode) {
+          print('  ✅ $boxName پاک شد');
+        }
       } catch (e) {
-        print('  ⚠️  خطا در پاک کردن $boxName: $e');
+        if (kDebugMode) {
+          print('  ⚠️  خطا در پاک کردن $boxName: $e');
+        }
       }
     }
     

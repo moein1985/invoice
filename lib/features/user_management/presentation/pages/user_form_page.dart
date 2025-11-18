@@ -22,7 +22,7 @@ class _UserFormPageState extends State<UserFormPage> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _fullNameController = TextEditingController();
-  String _selectedRole = 'user';
+  String _selectedRole = 'employee';
   bool _isActive = true;
 
   bool get _isEditing => widget.user != null;
@@ -165,12 +165,20 @@ class _UserFormPageState extends State<UserFormPage> {
                     ),
                     items: const [
                       DropdownMenuItem(
-                        value: 'user',
-                        child: Text('کاربر عادی'),
+                        value: 'employee',
+                        child: Text('کارمند'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'supervisor',
+                        child: Text('سرپرست'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'manager',
+                        child: Text('مدیر'),
                       ),
                       DropdownMenuItem(
                         value: 'admin',
-                        child: Text('مدیر'),
+                        child: Text('ادمین'),
                       ),
                     ],
                     onChanged: (value) {
