@@ -104,6 +104,8 @@ class _LoginPageState extends State<LoginPage> {
                       obscureText: _obscurePassword,
                       validator: Validators.required,
                       readOnly: isLoading,
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) => _handleLogin(),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscurePassword
