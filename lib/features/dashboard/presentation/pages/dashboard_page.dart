@@ -56,7 +56,14 @@ class _DashboardPageState extends State<DashboardPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('داشبورد'),
+          title: BlocBuilder<AuthBloc, AuthState>(
+            builder: (context, authState) {
+              if (authState is Authenticated) {
+                return Text('داشبورد - خوش آمدید ${authState.user.fullName}');
+              }
+              return const Text('داشبورد');
+            },
+          ),
           actions: [
             IconButton(
               icon: const Icon(Icons.refresh),

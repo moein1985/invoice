@@ -77,7 +77,9 @@ class UserModel {
       password: json['password'],
       fullName: json['fullName'],
       role: json['role'],
-      isActive: json['isActive'],
+      isActive: json['isActive'] is bool 
+          ? json['isActive'] 
+          : (json['isActive'] == 1 || json['isActive'] == true),
       createdAt: DateTime.parse(json['createdAt']),
       lastLogin: json['lastLogin'] != null
           ? DateTime.parse(json['lastLogin'])

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:invoice/core/widgets/loading_widget.dart';
 import 'package:invoice/core/widgets/error_widget.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 import '../bloc/user_bloc.dart';
 import '../bloc/user_event.dart';
 import '../bloc/user_state.dart';
@@ -21,8 +23,25 @@ class _UserListPageState extends State<UserListPage> {
   @override
   void initState() {
     super.initState();
+    // بررسی دسترسی
+    _checkAccess();
     // بارگذاری لیست کاربران
     context.read<UserBloc>().add(const LoadUsers());
+  }
+
+  void _checkAccess() {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! Authenticated || authState.user.role.name != 'admin') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('فقط ادمین به این بخش دسترسی دارد'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        Navigator.of(context).pop();
+      });
+    }
   }
 
   @override
@@ -139,20 +158,21 @@ class _UserListPageState extends State<UserListPage> {
   }
 
   void _showDeleteConfirmationDialog(dynamic user) {
+    final userBloc = context.read<UserBloc>();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('تأیید حذف'),
         content: Text('آیا از حذف کاربر "${user.fullName}" اطمینان دارید؟'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('انصراف'),
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
-              context.read<UserBloc>().add(DeleteUser(user.id));
+              Navigator.of(dialogContext).pop();
+              userBloc.add(DeleteUser(user.id));
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('حذف'),

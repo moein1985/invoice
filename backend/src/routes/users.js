@@ -17,6 +17,7 @@ const createUserSchema = Joi.object({
 
 const updateUserSchema = Joi.object({
   fullName: Joi.string(),
+  password: Joi.string().min(6),
   role: Joi.string().valid('employee', 'supervisor', 'manager', 'admin'),
   isActive: Joi.boolean()
 });
@@ -175,6 +176,11 @@ router.put('/:id', authenticate, authorize('admin'), async (req, res) => {
     if (typeof req.body.isActive !== 'undefined') {
       updates.push('is_active = ?');
       values.push(req.body.isActive);
+    }
+    if (req.body.password) {
+      const hashedPassword = await bcrypt.hash(req.body.password, 10);
+      updates.push('password = ?');
+      values.push(hashedPassword);
     }
 
     if (updates.length === 0) {

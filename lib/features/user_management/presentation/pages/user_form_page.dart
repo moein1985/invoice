@@ -21,6 +21,7 @@ class _UserFormPageState extends State<UserFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _fullNameController = TextEditingController();
   String _selectedRole = 'employee';
   bool _isActive = true;
@@ -42,6 +43,7 @@ class _UserFormPageState extends State<UserFormPage> {
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _fullNameController.dispose();
     super.dispose();
   }
@@ -54,6 +56,7 @@ class _UserFormPageState extends State<UserFormPage> {
         id: widget.user!.id,
         fullName: _fullNameController.text.trim(),
         username: _usernameController.text.trim(),
+        password: _passwordController.text.isNotEmpty ? _passwordController.text : null,
         role: _selectedRole,
         isActive: _isActive,
       ));
@@ -135,25 +138,59 @@ class _UserFormPageState extends State<UserFormPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // رمز عبور (فقط برای کاربر جدید)
-                  if (!_isEditing) ...[
-                    CustomTextField(
-                      controller: _passwordController,
-                      label: 'رمز عبور',
-                      hint: 'رمز عبور',
-                      obscureText: true,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'رمز عبور را وارد کنید';
-                        }
-                        if (value.length < 6) {
-                          return 'رمز عبور باید حداقل ۶ کاراکتر باشد';
-                        }
+                  // رمز عبور
+                  CustomTextField(
+                    controller: _passwordController,
+                    label: _isEditing ? 'رمز عبور جدید (اختیاری)' : 'رمز عبور',
+                    hint: _isEditing ? 'برای تغییر رمز عبور وارد کنید' : 'حداقل ۶ کاراکتر',
+                    obscureText: true,
+                    validator: (value) {
+                      // برای ویرایش، پسورد اختیاری است
+                      if (_isEditing && (value == null || value.isEmpty)) {
+                        return null; // پسورد خالی در ویرایش مجاز است
+                      }
+                      
+                      // برای ایجاد، پسورد الزامی است
+                      if (!_isEditing && (value == null || value.isEmpty)) {
+                        return 'رمز عبور را وارد کنید';
+                      }
+                      
+                      // اگر پسورد وارد شده باشد، باید حداقل 6 کاراکتر باشد
+                      if (value != null && value.isNotEmpty && value.length < 6) {
+                        return 'رمز عبور باید حداقل ۶ کاراکتر باشد';
+                      }
+                      
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // تأیید رمز عبور
+                  CustomTextField(
+                    controller: _confirmPasswordController,
+                    label: _isEditing ? 'تأیید رمز عبور جدید' : 'تأیید رمز عبور',
+                    hint: 'رمز عبور را دوباره وارد کنید',
+                    obscureText: true,
+                    validator: (value) {
+                      // اگر پسورد وارد نشده، تأیید هم نیاز نیست
+                      if (_isEditing && _passwordController.text.isEmpty) {
                         return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                  ],
+                      }
+                      
+                      // اگر پسورد وارد شده، تأیید الزامی است
+                      if (_passwordController.text.isNotEmpty) {
+                        if (value == null || value.isEmpty) {
+                          return 'تأیید رمز عبور را وارد کنید';
+                        }
+                        if (value != _passwordController.text) {
+                          return 'رمز عبور و تأیید آن یکسان نیستند';
+                        }
+                      }
+                      
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
 
                   // نقش کاربر
                   DropdownButtonFormField<String>(
