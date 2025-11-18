@@ -35,7 +35,7 @@ class DocumentRemoteDataSourceImpl implements DocumentRemoteDataSource {
       }
     }
 
-    DateTime _parseDate(dynamic v) {
+    DateTime parseDate(dynamic v) {
       if (v == null) return DateTime.now();
       return DateTime.parse(v.toString());
     }
@@ -63,21 +63,21 @@ class DocumentRemoteDataSourceImpl implements DocumentRemoteDataSource {
       documentNumber: (json['document_number'] ?? json['documentNumber'] ?? '').toString(),
       documentTypeString: mapDocType(json['document_type'] ?? json['documentType'] ?? 'tempProforma'),
       customerId: (json['customer_id'] ?? json['customerId'] ?? '').toString(),
-      documentDate: _parseDate(json['document_date'] ?? json['documentDate']),
+      documentDate: parseDate(json['document_date'] ?? json['documentDate']),
       items: items,
       totalAmount: ((json['total_amount'] ?? json['totalAmount'] ?? 0) as num).toDouble(),
       discount: ((json['discount'] ?? 0) as num).toDouble(),
       finalAmount: ((json['final_amount'] ?? json['finalAmount'] ?? 0) as num).toDouble(),
       statusString: (json['status'] ?? 'unpaid').toString(),
       notes: json['notes'] as String?,
-      createdAt: _parseDate(json['created_at'] ?? json['createdAt'] ?? DateTime.now().toIso8601String()),
-      updatedAt: _parseDate(json['updated_at'] ?? json['updatedAt'] ?? json['created_at'] ?? json['createdAt'] ?? DateTime.now().toIso8601String()),
+      createdAt: parseDate(json['created_at'] ?? json['createdAt'] ?? DateTime.now().toIso8601String()),
+      updatedAt: parseDate(json['updated_at'] ?? json['updatedAt'] ?? json['created_at'] ?? json['createdAt'] ?? DateTime.now().toIso8601String()),
       attachment: json['attachment'] as String?,
       defaultProfitPercentage: ((json['default_profit_percentage'] ?? json['defaultProfitPercentage'] ?? 22) as num).toDouble(),
       convertedFromId: json['converted_from_id'] ?? json['convertedFromId'] as String?,
       approvalStatus: (json['approval_status'] ?? json['approvalStatus'] ?? 'notRequired').toString(),
       approvedBy: (json['approved_by'] ?? json['approvedBy'])?.toString(),
-      approvedAt: (json['approved_at'] ?? json['approvedAt']) != null ? _parseDate(json['approved_at'] ?? json['approvedAt']) : null,
+      approvedAt: (json['approved_at'] ?? json['approvedAt']) != null ? parseDate(json['approved_at'] ?? json['approvedAt']) : null,
       rejectionReason: (json['rejection_reason'] ?? json['rejectionReason'])?.toString(),
       requiresApproval: (json['requires_approval'] ?? json['requiresApproval'] ?? false) as bool,
     );

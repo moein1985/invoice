@@ -19,11 +19,20 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
   }) async {
     try {
-      // Prefer remote login; fallback to local if remote fails
+      // Try remote login first
       final user = await remoteDataSource.login(username: username, password: password);
       return Right(user.toEntity());
     } on AuthException catch (e) {
-      // Fallback to local (offline) login
+      // Check if it's a real authentication error (401/403) or connection error
+      final isAuthError = e.message.contains('نام کاربری یا رمز عبور اشتباه است') ||
+                         e.message.contains('نشست معتبر نیست');
+      
+      if (isAuthError) {
+        // Don't try local login for wrong credentials
+        return Left(AuthFailure(e.message));
+      }
+      
+      // For connection errors, fallback to local (offline) login
       try {
         final user = await localDataSource.login(username: username, password: password);
         return Right(user.toEntity());

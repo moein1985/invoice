@@ -382,7 +382,7 @@ class _DocumentListPageState extends State<DocumentListPage> with SingleTickerPr
       } catch (_) {}
     }
 
-    AppLogger.debug('Opening preview for id=$documentId detachedSupported=${_supportsDetachedPreview}', 'DocumentList');
+    AppLogger.debug('Opening preview for id=$documentId detachedSupported=$_supportsDetachedPreview', 'DocumentList');
     final openedInNewWindow = await _tryOpenDetachedPreview(documentId, document);
     if (!openedInNewWindow && mounted) {
       Navigator.pushNamed(

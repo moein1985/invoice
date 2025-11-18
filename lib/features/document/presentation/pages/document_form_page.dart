@@ -65,7 +65,7 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
   }
 
   Future<void> _loadInitialData() async {
-    AppLogger.debug('Initial form load started existingId=${widget.documentId} initialType=${_selectedType}', 'DocumentForm');
+    AppLogger.debug('Initial form load started existingId=${widget.documentId} initialType=$_selectedType', 'DocumentForm');
     setState(() => _isLoading = true);
     
     // Load customers

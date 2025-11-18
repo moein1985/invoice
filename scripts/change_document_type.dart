@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 /// اسکریپت تغییر نوع سند
@@ -7,7 +8,9 @@ import 'package:hive_flutter/hive_flutter.dart';
 /// برای استفاده: dart run scripts/change_document_type.dart
 
 void main() async {
-  print('🔄 تغییر نوع سند PRO-1001 به tempProforma...\n');
+  if (kDebugMode) {
+    print('🔄 تغییر نوع سند PRO-1001 به tempProforma...\n');
+  }
   
   try {
     // مقداردهی Hive
@@ -17,8 +20,12 @@ void main() async {
     // باز کردن باکس documents
     final box = await Hive.openBox('documents');
     
-    print('📦 باکس documents باز شد');
-    print('تعداد اسناد: ${box.length}\n');
+    if (kDebugMode) {
+      print('📦 باکس documents باز شد');
+    }
+    if (kDebugMode) {
+      print('تعداد اسناد: ${box.length}\n');
+    }
     
     // یافتن سند PRO-1001
     Map<dynamic, dynamic>? targetDoc;
@@ -34,12 +41,18 @@ void main() async {
     }
     
     if (targetDoc == null) {
-      print('❌ سند PRO-1001 یافت نشد!');
+      if (kDebugMode) {
+        print('❌ سند PRO-1001 یافت نشد!');
+      }
       exit(1);
     }
     
-    print('✅ سند PRO-1001 یافت شد');
-    print('نوع فعلی: ${targetDoc['documentType']}\n');
+    if (kDebugMode) {
+      print('✅ سند PRO-1001 یافت شد');
+    }
+    if (kDebugMode) {
+      print('نوع فعلی: ${targetDoc['documentType']}\n');
+    }
     
     // تغییر نوع به tempProforma
     targetDoc['documentType'] = 0; // 0 = tempProforma
@@ -47,13 +60,19 @@ void main() async {
     // ذخیره تغییرات
     await box.put(targetKey, targetDoc);
     
-    print('✅ نوع سند به tempProforma تغییر یافت');
-    print('لطفاً برنامه را Hot Reload کنید (فشردن r در terminal)\n');
+    if (kDebugMode) {
+      print('✅ نوع سند به tempProforma تغییر یافت');
+    }
+    if (kDebugMode) {
+      print('لطفاً برنامه را Hot Reload کنید (فشردن r در terminal)\n');
+    }
     
     await box.close();
     
   } catch (e) {
-    print('❌ خطا: $e');
+    if (kDebugMode) {
+      print('❌ خطا: $e');
+    }
     exit(1);
   }
   

@@ -9,11 +9,11 @@ class ApprovalCard extends StatelessWidget {
   final VoidCallback onReject;
 
   const ApprovalCard({
-    Key? key,
+    super.key,
     required this.document,
     required this.onApprove,
     required this.onReject,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -70,11 +70,17 @@ void main() async {
       }
     }
     
-    print('\n✅ دیتابیس با موفقیت پاک شد!');
-    print('حالا می‌توانید برنامه را دوباره اجرا کنید.\n');
+    if (kDebugMode) {
+      print('\n✅ دیتابیس با موفقیت پاک شد!');
+    }
+    if (kDebugMode) {
+      print('حالا می‌توانید برنامه را دوباره اجرا کنید.\n');
+    }
     
   } catch (e) {
-    print('\n❌ خطا: $e');
+    if (kDebugMode) {
+      print('\n❌ خطا: $e');
+    }
     exit(1);
   }
   

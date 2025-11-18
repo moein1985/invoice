@@ -7,7 +7,7 @@ import '../widgets/approval_card.dart';
 import '../../../../injection_container.dart';
 
 class ApprovalQueuePage extends StatelessWidget {
-  const ApprovalQueuePage({Key? key}) : super(key: key);
+  const ApprovalQueuePage({super.key});
 
   @override
   Widget build(BuildContext context) {

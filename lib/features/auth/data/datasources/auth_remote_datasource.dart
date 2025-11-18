@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 
 import '../../../../core/constants/hive_boxes.dart';
@@ -19,10 +20,27 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<UserModel> login({required String username, required String password}) async {
     try {
+      if (kDebugMode) {
+        print('🔵 Login attempt - URL: ${dio.options.baseUrl}/api/auth/login');
+      }
+      if (kDebugMode) {
+        print('🔵 Username: $username');
+      }
+      if (kDebugMode) {
+        print('🔵 Dio baseUrl: ${dio.options.baseUrl}');
+      }
+      if (kDebugMode) {
+        print('🔵 Dio timeout: ${dio.options.connectTimeout}');
+      }
+      
       final response = await dio.post('/api/auth/login', data: {
         'username': username,
         'password': password,
       });
+      
+      if (kDebugMode) {
+        print('✅ Response received: ${response.statusCode}');
+      }
 
       final data = response.data as Map<String, dynamic>;
       final token = data['token'];
@@ -45,11 +63,48 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
       return user;
     } on DioException catch (e) {
-      final message = e.response?.data is Map && (e.response?.data['error'] != null)
-          ? e.response?.data['error']
-          : 'خطا در ارتباط با سرور';
-      throw AuthException(message.toString());
+      if (kDebugMode) {
+        print('🔴 DioException: ${e.type}');
+      }
+      if (kDebugMode) {
+        print('🔴 Response: ${e.response?.statusCode} - ${e.response?.data}');
+      }
+      if (kDebugMode) {
+        print('🔴 Message: ${e.message}');
+      }
+      
+      // Check response status code
+      if (e.response != null) {
+        final statusCode = e.response!.statusCode;
+        final responseData = e.response!.data;
+        
+        // Handle specific status codes
+        if (statusCode == 401 || statusCode == 403) {
+          // Authentication failed
+          final message = responseData is Map && responseData['error'] != null
+              ? responseData['error']
+              : 'نام کاربری یا رمز عبور اشتباه است';
+          throw AuthException(message.toString());
+        } else if (statusCode == 404) {
+          throw AuthException('سرویس مورد نظر یافت نشد');
+        } else if (statusCode! >= 500) {
+          throw AuthException('خطای سرور. لطفا بعدا تلاش کنید');
+        } else {
+          // Other errors
+          final message = responseData is Map && responseData['error'] != null
+              ? responseData['error']
+              : 'خطا در ارتباط با سرور';
+          throw AuthException(message.toString());
+        }
+      } else {
+        // No response (network error, timeout, etc.)
+        throw AuthException('خطا در ارتباط با سرور. لطفا اتصال اینترنت خود را بررسی کنید');
+      }
     } catch (e) {
+      if (e is AuthException) rethrow;
+      if (kDebugMode) {
+        print('🔴 Unexpected error: $e');
+      }
       throw AuthException('خطای نامشخص: ${e.toString()}');
     }
   }
