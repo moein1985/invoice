@@ -131,11 +131,7 @@ class _MainAppState extends State<MainApp> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       di.sl<ApprovalPollingService>().start();
       
-      // مقداردهی SIP Integration (فقط برای Web)
-      if (kIsWeb && !_sipInitialized) {
-        _initializeSipIntegration();
-        _sipInitialized = true;
-      }
+      // SIP Integration بعد از login فراخوانی می‌شود (در BlocListener)
     });
   }
 
@@ -254,29 +250,44 @@ class _MainAppState extends State<MainApp> {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => di.sl<AuthBloc>()..add(const CheckAuthStatus()),
-      child: MaterialApp(
-        title: 'مدیریت فاکتور',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        
-        // تنظیمات فارسی‌سازی
-        locale: const Locale('fa', 'IR'),
-        supportedLocales: const [
-          Locale('fa', 'IR'),
-        ],
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        
-        initialRoute: '/',
-        routes: {
-          '/': (context) => BlocBuilder<AuthBloc, AuthState>(
-            builder: (context, state) {
-              if (state is Authenticated) {
+      child: BlocListener<AuthBloc, AuthState>(
+        listener: (context, state) {
+          // وقتی کاربر لاگین کرد، SIP را راه‌اندازی کن (فقط برای Admin)
+          if (state is Authenticated && kIsWeb && !_sipInitialized) {
+            _initializeSipIntegration();
+            _sipInitialized = true;
+          }
+          // وقتی logout کرد، SIP را متوقف کن
+          if (state is Unauthenticated && _sipInitialized) {
+            try {
+              di.sl<SipIntegrationService>().stop();
+            } catch (_) {}
+            _sipInitialized = false;
+          }
+        },
+        child: MaterialApp(
+          title: 'مدیریت فاکتور',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          
+          // تنظیمات فارسی‌سازی
+          locale: const Locale('fa', 'IR'),
+          supportedLocales: const [
+            Locale('fa', 'IR'),
+          ],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          
+          initialRoute: '/',
+          routes: {
+            '/': (context) => BlocBuilder<AuthBloc, AuthState>(
+              builder: (context, state) {
+                if (state is Authenticated) {
 
-                return MultiBlocProvider(
+                  return MultiBlocProvider(
                   providers: [
                     BlocProvider.value(value: context.read<AuthBloc>()),
                     BlocProvider(create: (context) => di.sl<DashboardBloc>()),
@@ -391,8 +402,10 @@ class _MainAppState extends State<MainApp> {
               ),
             );
           }
+
           return null;
         },
+        ),
       ),
     );
   }

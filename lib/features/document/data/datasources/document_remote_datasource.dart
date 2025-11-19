@@ -185,8 +185,15 @@ class DocumentRemoteDataSourceImpl implements DocumentRemoteDataSource {
   Future<List<DocumentModel>> getDocuments() async {
     try {
       final res = await dio.get('/api/documents');
-      final list = (res.data as List).cast<Map<String, dynamic>>();
-      return list.map(_fromApi).toList();
+      // چک کردن آیا response یک array است یا object
+      if (res.data is List) {
+        final list = (res.data as List).cast<Map<String, dynamic>>();
+        return list.map(_fromApi).toList();
+      } else if (res.data is Map) {
+        // اگر object باشد، لیست خالی برمی‌گردانیم
+        return [];
+      }
+      return [];
     } on DioException {
       throw CacheException('خطا در دریافت اسناد');
     }
