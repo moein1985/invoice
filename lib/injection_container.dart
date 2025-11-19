@@ -1,5 +1,4 @@
 import 'package:get_it/get_it.dart';
-import 'features/auth/data/datasources/auth_local_datasource.dart';
 import 'features/auth/data/datasources/auth_remote_datasource.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
@@ -7,12 +6,10 @@ import 'features/auth/domain/usecases/login_usecase.dart';
 import 'features/auth/domain/usecases/logout_usecase.dart';
 import 'features/auth/domain/usecases/get_current_user_usecase.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
-import 'features/dashboard/data/datasources/dashboard_local_datasource.dart';
 import 'features/dashboard/data/repositories/dashboard_repository_impl.dart';
 import 'features/dashboard/domain/repositories/dashboard_repository.dart';
 import 'features/dashboard/domain/usecases/get_dashboard_data_usecase.dart';
 import 'features/dashboard/presentation/bloc/dashboard_bloc.dart';
-import 'features/user_management/data/datasources/user_local_datasource.dart';
 import 'features/user_management/data/datasources/user_remote_datasource.dart';
 import 'features/user_management/data/repositories/user_repository_impl.dart';
 import 'features/user_management/domain/repositories/user_repository.dart';
@@ -23,7 +20,6 @@ import 'features/user_management/domain/usecases/search_users_usecase.dart';
 import 'features/user_management/domain/usecases/toggle_user_status_usecase.dart';
 import 'features/user_management/domain/usecases/update_user_usecase.dart';
 import 'features/user_management/presentation/bloc/user_bloc.dart';
-import 'features/customer/data/datasources/customer_local_datasource.dart';
 import 'features/customer/data/datasources/customer_remote_datasource.dart';
 import 'features/customer/data/repositories/customer_repository_impl.dart';
 import 'features/customer/domain/repositories/customer_repository.dart';
@@ -51,12 +47,14 @@ import 'features/document/presentation/bloc/document_bloc.dart';
 import 'features/document/presentation/bloc/approval_bloc.dart';
 import 'features/document/domain/repositories/document_repository.dart';
 import 'features/document/data/repositories/document_repository_impl.dart';
-import 'features/document/data/datasources/document_local_datasource.dart';
 import 'features/document/data/datasources/document_remote_datasource.dart';
 import 'features/export/services/pdf_export_service.dart';
 import 'features/export/services/excel_export_service.dart';
 import 'core/services/api_client.dart';
 import 'core/services/approval_polling_service.dart';
+import 'core/services/web_sip_service.dart';
+import 'core/services/call_notification_service.dart';
+import 'core/services/sip_integration_service.dart';
 
 final sl = GetIt.instance;
 bool _initialized = false;
@@ -86,13 +84,10 @@ Future<void> init() async {
 
   // Repository
   sl.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(localDataSource: sl(), remoteDataSource: sl()),
+    () => AuthRepositoryImpl(remoteDataSource: sl()),
   );
 
   // Data sources
-  sl.registerLazySingleton<AuthLocalDataSource>(
-    () => AuthLocalDataSourceImpl(),
-  );
   sl.registerLazySingleton<AuthRemoteDataSource>(
     () => AuthRemoteDataSourceImpl(dio: sl<ApiClient>().dio),
   );
@@ -110,13 +105,10 @@ Future<void> init() async {
 
   // Repository
   sl.registerLazySingleton<DashboardRepository>(
-    () => DashboardRepositoryImpl(localDataSource: sl()),
+    () => DashboardRepositoryImpl(),
   );
 
   // Data sources
-  sl.registerLazySingleton<DashboardLocalDataSource>(
-    () => DashboardLocalDataSourceImpl(),
-  );
 
   //! Features - User Management
   // Bloc
@@ -141,13 +133,10 @@ Future<void> init() async {
 
   // Repository
   sl.registerLazySingleton<UserRepository>(
-    () => UserRepositoryImpl(localDataSource: sl(), remoteDataSource: sl()),
+    () => UserRepositoryImpl(remoteDataSource: sl()),
   );
 
   // Data sources
-  sl.registerLazySingleton<UserLocalDataSource>(
-    () => UserLocalDataSourceImpl(),
-  );
   sl.registerLazySingleton<UserRemoteDataSource>(
     () => UserRemoteDataSourceImpl(dio: sl<ApiClient>().dio),
   );
@@ -175,13 +164,10 @@ Future<void> init() async {
 
   // Repository
   sl.registerLazySingleton<CustomerRepository>(
-    () => CustomerRepositoryImpl(localDataSource: sl(), remoteDataSource: sl()),
+    () => CustomerRepositoryImpl(remoteDataSource: sl()),
   );
 
   // Data sources
-  sl.registerLazySingleton<CustomerLocalDataSource>(
-    () => CustomerLocalDataSourceImpl(),
-  );
   sl.registerLazySingleton<CustomerRemoteDataSource>(
     () => CustomerRemoteDataSourceImpl(dio: sl<ApiClient>().dio),
   );
@@ -229,13 +215,10 @@ Future<void> init() async {
 
   // Repository
   sl.registerLazySingleton<DocumentRepository>(
-    () => DocumentRepositoryImpl(localDataSource: sl(), remoteDataSource: sl()),
+    () => DocumentRepositoryImpl(remoteDataSource: sl()),
   );
 
   // Data sources
-  sl.registerLazySingleton<DocumentLocalDataSource>(
-    () => DocumentLocalDataSourceImpl(),
-  );
   sl.registerLazySingleton<DocumentRemoteDataSource>(
     () => DocumentRemoteDataSourceImpl(dio: sl<ApiClient>().dio),
   );
@@ -249,6 +232,23 @@ Future<void> init() async {
     () => ApprovalPollingService(
       getPendingApprovals: sl(),
       authRepository: sl(),
+    ),
+  );
+
+  //! SIP Phone Integration Services (فقط برای Web)
+  // WebSipService - سرویس اصلی SIP
+  sl.registerLazySingleton(() => WebSipService());
+  
+  // CallNotificationService - سرویس جستجوی مشتری
+  sl.registerLazySingleton(
+    () => CallNotificationService(sl<ApiClient>().dio),
+  );
+  
+  // SipIntegrationService - سرویس یکپارچه‌سازی
+  sl.registerLazySingleton(
+    () => SipIntegrationService(
+      sipService: sl(),
+      notificationService: sl(),
     ),
   );
 }

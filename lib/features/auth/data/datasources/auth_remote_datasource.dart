@@ -1,15 +1,15 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:hive/hive.dart';
 
-import '../../../../core/constants/hive_boxes.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/services/api_client.dart';
 import '../models/user_model.dart';
 
 abstract class AuthRemoteDataSource {
   Future<UserModel> login({required String username, required String password});
   Future<UserModel> me();
   Future<void> logout();
+  Future<bool> isLoggedIn();
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -56,10 +56,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         'lastLogin': null,
       });
 
-      final authBox = Hive.box(HiveBoxes.auth);
-      await authBox.put('token', token);
-      await authBox.put('currentUserId', user.id);
-      await authBox.put('isLoggedIn', true);
+      ApiClient.setToken(token);
 
       return user;
     } on DioException catch (e) {
@@ -133,9 +130,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<void> logout() async {
-    final authBox = Hive.box(HiveBoxes.auth);
-    await authBox.delete('token');
-    await authBox.put('isLoggedIn', false);
-    await authBox.delete('currentUserId');
+    ApiClient.setToken(null);
+  }
+
+  @override
+  Future<bool> isLoggedIn() async {
+    return ApiClient.isLoggedIn;
   }
 }

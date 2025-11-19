@@ -33,6 +33,73 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
+  <!-- Loading indicator -->
+  <div id="loading" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 9999;">
+    <div style="font-size: 18px; color: #666; margin-bottom: 10px;">در حال بارگذاری سیستم تلفن...</div>
+    <div style="width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+  </div>
+  <style>
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+  
+  <!-- بارگذاری Local JsSIP و سپس Flutter -->
+  <script>
+    console.log('🔍 [INDEX.HTML] شروع بارگذاری صفحه...');
+    console.log('🔍 [INDEX.HTML] مسیر فعلی:', window.location.href);
+  </script>
+  
+  <script src="jssip.min.js" onerror="console.error('❌ خطا در بارگذاری jssip.min.js');" onload="console.log('📥 jssip.min.js لود شد');"></script>
+  
+  <script>
+    console.log('🔍 [INDEX.HTML] بررسی JsSIP...');
+    console.log('🔍 [INDEX.HTML] typeof JsSIP:', typeof JsSIP);
+    console.log('🔍 [INDEX.HTML] window.JsSIP:', window.JsSIP);
+    
+    // بررسی و تنظیم JsSIP
+    if (typeof JsSIP !== 'undefined') {
+      console.log('✅ JsSIP version ' + JsSIP.version + ' loaded successfully from local file');
+      window.jsSipLoaded = true;
+      window.JsSIPLib = JsSIP;
+    } else {
+      console.error('❌ JsSIP not loaded from local file');
+      console.error('❌ window object keys:', Object.keys(window).filter(k => k.toLowerCase().includes('js')));
+      window.jsSipLoaded = false;
+    }
+    
+    // تابع برای لود کردن JsSIP (برای سازگاری با کد قبلی)
+    function loadJsSIP() {
+      return new Promise((resolve, reject) => {
+        if (typeof JsSIP !== 'undefined') {
+          resolve();
+        } else {
+          reject(new Error('JsSIP not found'));
+        }
+      });
+    }
+
+    // تابع برای لود کردن Flutter
+    function loadFlutter() {
+      const script = document.createElement('script');
+      script.src = 'flutter_bootstrap.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+
+    // ابتدا JsSIP را لود می‌کنیم، سپس Flutter
+    loadJsSIP()
+      .then(() => {
+        console.log('✅ JsSIP آماده است - شروع بارگذاری Flutter');
+        loadFlutter();
+      })
+      .catch((error) => {
+        console.error('⚠️ خطا در بارگذاری JsSIP:', error);
+        console.log('🔄 ادامه بارگذاری Flutter بدون JsSIP...');
+        window.jsSipLoaded = false;
+        loadFlutter();
+      });
+  </script>
 </body>
 </html>

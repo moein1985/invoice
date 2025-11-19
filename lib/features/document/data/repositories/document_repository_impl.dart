@@ -4,15 +4,12 @@ import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/document_entity.dart';
 import '../../domain/repositories/document_repository.dart';
-import '../datasources/document_local_datasource.dart';
 import '../datasources/document_remote_datasource.dart';
 import '../models/document_model.dart';
 
-class DocumentRepositoryImpl implements DocumentRepository {
-  final DocumentLocalDataSource localDataSource;
-  final DocumentRemoteDataSource remoteDataSource;
+class DocumentRepositoryImpl implements DocumentRepository {  final DocumentRemoteDataSource remoteDataSource;
 
-  DocumentRepositoryImpl({required this.localDataSource, required this.remoteDataSource});
+  DocumentRepositoryImpl({required this.remoteDataSource});
 
   @override
   Future<Either<Failure, DocumentEntity>> createDocument(DocumentEntity document) async {
@@ -22,7 +19,7 @@ class DocumentRepositoryImpl implements DocumentRepository {
         final result = await remoteDataSource.createDocument(model);
         return Right(result.toEntity());
       } catch (_) {
-        final result = await localDataSource.createDocument(model);
+        final result = await remoteDataSource.createDocument(model);
         return Right(result.toEntity());
       }
     } on CacheException catch (e) {
@@ -40,7 +37,7 @@ class DocumentRepositoryImpl implements DocumentRepository {
         final result = await remoteDataSource.updateDocument(model);
         return Right(result.toEntity());
       } catch (_) {
-        final result = await localDataSource.updateDocument(model);
+        final result = await remoteDataSource.updateDocument(model);
         return Right(result.toEntity());
       }
     } on NotFoundException catch (e) {
@@ -58,7 +55,7 @@ class DocumentRepositoryImpl implements DocumentRepository {
       try {
         await remoteDataSource.deleteDocument(documentId);
       } catch (_) {
-        await localDataSource.deleteDocument(documentId);
+        await remoteDataSource.deleteDocument(documentId);
       }
       return const Right(null);
     } on NotFoundException catch (e) {
@@ -77,7 +74,7 @@ class DocumentRepositoryImpl implements DocumentRepository {
         final documents = await remoteDataSource.getDocuments();
         return Right(documents.map((model) => model.toEntity()).toList());
       } catch (_) {
-        final documents = await localDataSource.getDocuments(userId);
+        final documents = await remoteDataSource.getDocuments(userId);
         return Right(documents.map((model) => model.toEntity()).toList());
       }
     } on CacheException catch (e) {
@@ -94,7 +91,7 @@ class DocumentRepositoryImpl implements DocumentRepository {
         final documents = await remoteDataSource.getDocuments();
         return Right(documents.map((model) => model.toEntity()).toList());
       } catch (_) {
-        final documents = await localDataSource.getAllDocuments();
+        final documents = await remoteDataSource.getAllDocuments();
         return Right(documents.map((model) => model.toEntity()).toList());
       }
     } on CacheException catch (e) {
@@ -111,7 +108,7 @@ class DocumentRepositoryImpl implements DocumentRepository {
         final document = await remoteDataSource.getDocumentById(documentId);
         return Right(document.toEntity());
       } catch (_) {
-        final document = await localDataSource.getDocumentById(documentId);
+        final document = await remoteDataSource.getDocumentById(documentId);
         return Right(document.toEntity());
       }
     } on NotFoundException catch (e) {
@@ -153,7 +150,7 @@ class DocumentRepositoryImpl implements DocumentRepository {
         final typeString = type == null 
             ? null 
             : type == DocumentType.invoice ? 'invoice' : 'proforma';
-        final documents = await localDataSource.searchDocuments(
+        final documents = await remoteDataSource.searchDocuments(
           userId: userId,
           query: query,
           type: typeString,
@@ -173,7 +170,7 @@ class DocumentRepositoryImpl implements DocumentRepository {
   Future<Either<Failure, DocumentEntity>> convertProformaToInvoice(String proformaId) async {
     try {
       // فعلاً روی سرور نداریم؛ بازگشت به آفلاین
-      final invoice = await localDataSource.convertProformaToInvoice(proformaId);
+      final invoice = await remoteDataSource.convertProformaToInvoice(proformaId);
       return Right(invoice.toEntity());
     } on NotFoundException catch (e) {
       return Left(NotFoundFailure(e.message));
@@ -191,7 +188,7 @@ class DocumentRepositoryImpl implements DocumentRepository {
     try {
       // روی سرور نداریم؛ محلی محاسبه می‌کنیم
       final typeString = type == DocumentType.invoice ? 'invoice' : 'proforma';
-      final number = await localDataSource.getNextDocumentNumber(typeString);
+      final number = await remoteDataSource.getNextDocumentNumber(typeString);
       return Right(number);
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
@@ -208,7 +205,7 @@ class DocumentRepositoryImpl implements DocumentRepository {
         return Right(result.toEntity());
       } catch (_) {
         // Fallback to local update
-        final doc = await localDataSource.getDocumentById(documentId);
+        final doc = await remoteDataSource.getDocumentById(documentId);
         final updated = DocumentModel(
           id: doc.id,
           userId: doc.userId,
@@ -233,7 +230,7 @@ class DocumentRepositoryImpl implements DocumentRepository {
           rejectionReason: null,
           requiresApproval: doc.requiresApproval,
         );
-        final result = await localDataSource.updateDocument(updated);
+        final result = await remoteDataSource.updateDocument(updated);
         return Right(result.toEntity());
       }
     } on NotFoundException catch (e) {
@@ -253,7 +250,7 @@ class DocumentRepositoryImpl implements DocumentRepository {
         return Right(result.toEntity());
       } catch (_) {
         // Fallback to local update
-        final doc = await localDataSource.getDocumentById(documentId);
+        final doc = await remoteDataSource.getDocumentById(documentId);
         final updated = DocumentModel(
           id: doc.id,
           userId: doc.userId,
@@ -278,7 +275,7 @@ class DocumentRepositoryImpl implements DocumentRepository {
           rejectionReason: reason,
           requiresApproval: doc.requiresApproval,
         );
-        final result = await localDataSource.updateDocument(updated);
+        final result = await remoteDataSource.updateDocument(updated);
         return Right(result.toEntity());
       }
     } on NotFoundException catch (e) {

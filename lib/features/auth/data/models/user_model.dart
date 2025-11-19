@@ -1,33 +1,14 @@
-import 'package:hive/hive.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../../../core/enums/user_role.dart';
 
-part 'user_model.g.dart';
-
-@HiveType(typeId: 0)
 class UserModel {
-  @HiveField(0)
   final String id;
-
-  @HiveField(1)
   final String username;
-
-  @HiveField(2)
   final String password;
-
-  @HiveField(3)
   final String fullName;
-
-  @HiveField(4)
   final String role; // ذخیره به صورت String
-
-  @HiveField(5)
   final bool isActive;
-
-  @HiveField(6)
   final DateTime createdAt;
-
-  @HiveField(7)
   final DateTime? lastLogin;
 
   const UserModel({

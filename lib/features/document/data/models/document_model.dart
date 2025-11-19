@@ -1,78 +1,32 @@
-import 'package:hive/hive.dart';
 import '../../../../core/enums/document_type.dart';
 import '../../../../core/enums/document_status.dart';
 import '../../../../core/enums/approval_status.dart';
 import '../../domain/entities/document_entity.dart';
 import 'document_item_model.dart';
 
-part 'document_model.g.dart';
 
-@HiveType(typeId: 3)
 class DocumentModel {
-  @HiveField(0)
   final String id;
-
-  @HiveField(1)
   final String userId;
-
-  @HiveField(2)
   final String documentNumber;
-
-  @HiveField(3)
   final String documentTypeString; // 'invoice' or 'proforma'
-
-  @HiveField(4)
   final String customerId;
-
-  @HiveField(5)
   final DateTime documentDate;
-
-  @HiveField(6)
   final List<DocumentItemModel> items;
-
-  @HiveField(7)
   final double totalAmount;
-
-  @HiveField(8)
   final double discount;
-
-  @HiveField(9)
   final double finalAmount;
-
-  @HiveField(10)
   final String statusString; // 'paid', 'unpaid', 'pending'
-
-  @HiveField(11)
   final String? notes;
-
-  @HiveField(12)
   final DateTime createdAt;
-
-  @HiveField(13)
   final DateTime updatedAt;
-
-  @HiveField(14)
   final String? attachment;
-
-  @HiveField(15)
   final double defaultProfitPercentage;
-
-  @HiveField(16)
   final String? convertedFromId;
-
-  @HiveField(17)
   final String approvalStatus;
-
-  @HiveField(18)
   final String? approvedBy;
-
-  @HiveField(19)
   final DateTime? approvedAt;
-
-  @HiveField(20)
   final String? rejectionReason;
-
-  @HiveField(21)
   final bool requiresApproval;
 
   const DocumentModel({

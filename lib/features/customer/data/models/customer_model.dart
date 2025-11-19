@@ -1,50 +1,25 @@
-import 'package:hive/hive.dart';
 import '../../domain/entities/customer_entity.dart';
 
-part 'customer_model.g.dart';
-
-@HiveType(typeId: 2) // typeId باید منحصر به فرد باشد
 class CustomerModel {
-  @HiveField(0)
   final String id;
-
-  @HiveField(1)
   final String name;
-
-  @HiveField(2)
   final String phone;
-
-  @HiveField(3)
+  final List<String>? phoneNumbers;
   final String? email;
-
-  @HiveField(4)
   final String? address;
-
-  @HiveField(5)
   final String? company;
-
-  @HiveField(6)
   final String? nationalId;
-
-  @HiveField(7)
   final double creditLimit;
-
-  @HiveField(8)
   final double currentDebt;
-
-  @HiveField(9)
   final bool isActive;
-
-  @HiveField(10)
   final DateTime createdAt;
-
-  @HiveField(11)
   final DateTime? lastTransaction;
 
   const CustomerModel({
     required this.id,
     required this.name,
     required this.phone,
+    this.phoneNumbers,
     this.email,
     this.address,
     this.company,
@@ -62,6 +37,7 @@ class CustomerModel {
       id: entity.id,
       name: entity.name,
       phone: entity.phone,
+      phoneNumbers: entity.phoneNumbers,
       email: entity.email,
       address: entity.address,
       company: entity.company,
@@ -80,6 +56,7 @@ class CustomerModel {
       id: json['id'] as String,
       name: json['name'] as String,
       phone: json['phone'] as String,
+      phoneNumbers: json['phoneNumbers'] != null ? List<String>.from(json['phoneNumbers']) : null,
       email: json['email'] as String?,
       address: json['address'] as String?,
       company: json['company'] as String?,
@@ -100,6 +77,7 @@ class CustomerModel {
       'id': id,
       'name': name,
       'phone': phone,
+      'phoneNumbers': phoneNumbers,
       'email': email,
       'address': address,
       'company': company,
@@ -118,6 +96,7 @@ class CustomerModel {
       id: id,
       name: name,
       phone: phone,
+      phoneNumbers: phoneNumbers,
       email: email,
       address: address,
       company: company,

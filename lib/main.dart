@@ -3,17 +3,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'core/themes/app_theme.dart';
 import 'core/utils/init_default_admin.dart';
 import 'core/utils/logger.dart';
 import 'core/observers/bloc_observer.dart';
-import 'core/constants/hive_boxes.dart';
 import 'core/utils/window_arguments.dart';
-import 'features/auth/data/models/user_model.dart';
-import 'features/customer/data/models/customer_model.dart';
-import 'features/document/data/models/document_model.dart';
-import 'features/document/data/models/document_item_model.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/bloc/auth_event.dart';
 import 'features/auth/presentation/bloc/auth_state.dart';
@@ -38,8 +32,12 @@ import 'features/document/presentation/pages/approval_queue_page.dart';
 import 'core/services/approval_polling_service.dart';
 import 'core/enums/document_type.dart';
 import 'injection_container.dart' as di;
+import 'core/services/sip_integration_service.dart';
+import 'core/models/sip_config.dart';
+import 'dart:js' as js;
 
 bool _appServicesInitialized = false;
+bool _sipInitialized = false;
 
 Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -87,32 +85,6 @@ Future<void> _initializeAppServices() async {
 
   AppLogger.info('🚀 Application Starting...', 'MAIN');
 
-  // مقداردهی اولیه Hive
-  await Hive.initFlutter();
-
-  // ثبت Adapter های Hive
-  Hive.registerAdapter(UserModelAdapter());
-  Hive.registerAdapter(CustomerModelAdapter());
-  Hive.registerAdapter(DocumentModelAdapter());
-  Hive.registerAdapter(DocumentItemModelAdapter());
-
-  // باز کردن Boxes فقط در صورت نیاز
-  if (!Hive.isBoxOpen(HiveBoxes.users)) {
-    await Hive.openBox<UserModel>(HiveBoxes.users);
-  }
-  if (!Hive.isBoxOpen(HiveBoxes.auth)) {
-    await Hive.openBox(HiveBoxes.auth);
-  }
-  if (!Hive.isBoxOpen(HiveBoxes.currentUser)) {
-    await Hive.openBox<String>(HiveBoxes.currentUser);
-  }
-  if (!Hive.isBoxOpen(HiveBoxes.customers)) {
-    await Hive.openBox<CustomerModel>(HiveBoxes.customers);
-  }
-  if (!Hive.isBoxOpen(HiveBoxes.documents)) {
-    await Hive.openBox<DocumentModel>(HiveBoxes.documents);
-  }
-
   // مقداردهی اولیه Dependency Injection
   await di.init();
 
@@ -148,13 +120,107 @@ class _MainAppState extends State<MainApp> {
     // Start polling service
     WidgetsBinding.instance.addPostFrameCallback((_) {
       di.sl<ApprovalPollingService>().start();
+      
+      // مقداردهی SIP Integration (فقط برای Web)
+      if (kIsWeb && !_sipInitialized) {
+        _initializeSipIntegration();
+        _sipInitialized = true;
+      }
     });
   }
 
   @override
   void dispose() {
     di.sl<ApprovalPollingService>().stop();
+    
+    // توقف SIP Integration (فقط برای Web)
+    if (kIsWeb && _sipInitialized) {
+      di.sl<SipIntegrationService>().stop();
+    }
+    
     super.dispose();
+  }
+
+  /// بررسی لود شدن JsSIP از طریق JavaScript
+  Future<bool> _checkJsSIPLoaded() async {
+    if (!kIsWeb) return false;
+    
+    try {
+      // چک کردن window.jsSipLoaded
+      final loaded = js.context['jsSipLoaded'];
+      return loaded == true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// مقداردهی SIP Integration برای Web
+  Future<void> _initializeSipIntegration() async {
+    try {
+      debugPrint('📞 شروع مقداردهی SIP Integration...');
+      
+      // بررسی لود شدن JsSIP
+      if (kIsWeb) {
+        final isLoaded = await _checkJsSIPLoaded();
+        if (!isLoaded) {
+          debugPrint('⚠️ JsSIP لود نشده - صبر 2 ثانیه...');
+          await Future.delayed(const Duration(seconds: 2));
+          
+          final isLoadedNow = await _checkJsSIPLoaded();
+          if (!isLoadedNow) {
+            debugPrint('❌ JsSIP همچنان لود نشده - لغو مقداردهی SIP');
+            return;
+          }
+        }
+        debugPrint('✅ JsSIP آماده است');
+      }
+      
+      // پیکربندی SIP - اتصال به سرور تلفنی
+      final config = SipConfig(
+        sipServer: '192.168.85.88',
+        sipPort: '8088',  // WebSocket port
+        extension: '1010',
+        password: 'Abc@1010',
+        displayName: 'Invoice',
+        autoAnswer: false,
+      );
+      
+      final sipService = di.sl<SipIntegrationService>();
+      
+      // تنظیم callback ها
+      sipService.onCustomerCallReceived = (customerData) {
+        debugPrint('✅ تماس از مشتری: ${customerData.customer.name}');
+        debugPrint('   شماره تلفن: ${customerData.phoneNumber}');
+        
+        if (customerData.lastDocument != null) {
+          debugPrint('   آخرین سند: ${customerData.lastDocument!.documentNumber}');
+        }
+        
+        // TODO: نمایش پاپ‌آپ با اطلاعات مشتری و سند
+      };
+      
+      sipService.onUnknownCallReceived = (phoneNumber) {
+        debugPrint('⚠️ تماس از شماره ناشناس: $phoneNumber');
+        
+        // TODO: نمایش پاپ‌آپ برای ثبت مشتری جدید
+      };
+      
+      sipService.onStatusChanged = (status) {
+        debugPrint('📞 تغییر وضعیت SIP: $status');
+      };
+      
+      sipService.onError = (error) {
+        debugPrint('❌ خطای SIP: $error');
+      };
+      
+      // مقداردهی و اتصال
+      sipService.initialize(config);
+      
+      debugPrint('✅ SIP Integration با موفقیت راه‌اندازی شد');
+    } catch (e, stackTrace) {
+      debugPrint('❌ خطا در مقداردهی SIP Integration: $e');
+      debugPrint('Stack: $stackTrace');
+    }
   }
 
   @override

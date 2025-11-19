@@ -51,7 +51,14 @@ app.use('/api/documents', documentRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
+  console.log('Health check requested');
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Test endpoint
+app.get('/test', (req, res) => {
+  console.log('Test endpoint hit');
+  res.json({ message: 'Test successful' });
 });
 
 // 404 handler
@@ -86,7 +93,11 @@ process.on('unhandledRejection', (reason, promise) => {
 
 process.on('uncaughtException', (error) => {
   console.error('❌ Uncaught Exception:', error);
-  process.exit(1);
+  console.error('Stack:', error.stack);
+  // Don't exit in development
+  if (process.env.NODE_ENV === 'production') {
+    process.exit(1);
+  }
 });
 
 // Keep the process running

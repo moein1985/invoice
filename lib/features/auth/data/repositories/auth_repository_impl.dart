@@ -4,14 +4,12 @@ import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
-import '../datasources/auth_local_datasource.dart';
 import '../datasources/auth_remote_datasource.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  final AuthLocalDataSource localDataSource;
   final AuthRemoteDataSource remoteDataSource;
 
-  AuthRepositoryImpl({required this.localDataSource, required this.remoteDataSource});
+  AuthRepositoryImpl({required this.remoteDataSource});
 
   @override
   Future<Either<Failure, UserEntity>> login({
@@ -19,36 +17,14 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
   }) async {
     try {
-      // Try remote login first
       final user = await remoteDataSource.login(username: username, password: password);
       return Right(user.toEntity());
     } on AuthException catch (e) {
-      // Check if it's a real authentication error (401/403) or connection error
-      final isAuthError = e.message.contains('نام کاربری یا رمز عبور اشتباه است') ||
-                         e.message.contains('نشست معتبر نیست');
-      
-      if (isAuthError) {
-        // Don't try local login for wrong credentials
-        return Left(AuthFailure(e.message));
-      }
-      
-      // For connection errors, fallback to local (offline) login
-      try {
-        final user = await localDataSource.login(username: username, password: password);
-        return Right(user.toEntity());
-      } on Exception {
-        return Left(AuthFailure(e.message));
-      }
+      return Left(AuthFailure(e.message));
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {
-      // Fallback to local on unknown/connection errors
-      try {
-        final user = await localDataSource.login(username: username, password: password);
-        return Right(user.toEntity());
-      } catch (_) {
-        return Left(AuthFailure('خطای نامشخص: ${e.toString()}'));
-      }
+      return Left(AuthFailure('خطای نامشخص: ${e.toString()}'));
     }
   }
 
@@ -80,7 +56,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<bool> isLoggedIn() async {
-    return await localDataSource.isLoggedIn();
+    return await remoteDataSource.isLoggedIn();
   }
 }
 

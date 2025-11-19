@@ -4,22 +4,27 @@ import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/dashboard_entity.dart';
 import '../../domain/repositories/dashboard_repository.dart';
-import '../datasources/dashboard_local_datasource.dart';
 
 class DashboardRepositoryImpl implements DashboardRepository {
-  final DashboardLocalDataSource localDataSource;
-
-  DashboardRepositoryImpl({required this.localDataSource});
+  DashboardRepositoryImpl();
 
   @override
   Future<Either<Failure, DashboardEntity>> getDashboardData(String userId) async {
     try {
-
-      final dashboardData = await localDataSource.getDashboardData(userId);
+      // TODO: Implement backend API for dashboard
+      // For now, return empty dashboard data
+      final dashboardData = DashboardEntity(
+        totalInvoices: 0,
+        totalRevenue: 0.0,
+        totalCustomers: 0,
+        pendingInvoices: 0,
+        monthlyRevenue: 0.0,
+        monthlyData: const [],
+        recentInvoices: const [],
+      );
 
       return Right(dashboardData);
     } on CacheException catch (e) {
-
       return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(CacheFailure('خطای نامشخص: ${e.toString()}'));

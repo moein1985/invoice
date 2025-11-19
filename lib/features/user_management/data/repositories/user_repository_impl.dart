@@ -3,14 +3,11 @@ import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/repositories/user_repository.dart';
-import '../datasources/user_local_datasource.dart';
 import '../datasources/user_remote_datasource.dart';
 
-class UserRepositoryImpl implements UserRepository {
-  final UserLocalDataSource localDataSource;
-  final UserRemoteDataSource remoteDataSource;
+class UserRepositoryImpl implements UserRepository {  final UserRemoteDataSource remoteDataSource;
 
-  UserRepositoryImpl({required this.localDataSource, required this.remoteDataSource});
+  UserRepositoryImpl({required this.remoteDataSource});
 
   @override
   Future<Either<Failure, List<UserEntity>>> getUsers() async {
@@ -19,7 +16,7 @@ class UserRepositoryImpl implements UserRepository {
         final users = await remoteDataSource.getUsers();
         return Right(users.map((user) => user.toEntity()).toList());
       } catch (_) {
-        final users = await localDataSource.getUsers();
+        final users = await remoteDataSource.getUsers();
         return Right(users.map((user) => user.toEntity()).toList());
       }
     } on CacheException catch (e) {
@@ -36,7 +33,7 @@ class UserRepositoryImpl implements UserRepository {
         final user = await remoteDataSource.getUserById(id);
         return Right(user.toEntity());
       } catch (_) {
-        final user = await localDataSource.getUserById(id);
+        final user = await remoteDataSource.getUserById(id);
         return Right(user.toEntity());
       }
     } on CacheException catch (e) {
@@ -63,7 +60,7 @@ class UserRepositoryImpl implements UserRepository {
         );
         return Right(user.toEntity());
       } catch (_) {
-        final user = await localDataSource.createUser(
+        final user = await remoteDataSource.createUser(
           username: username,
           password: password,
           fullName: fullName,
@@ -99,7 +96,7 @@ class UserRepositoryImpl implements UserRepository {
         );
         return Right(user.toEntity());
       } catch (_) {
-        final user = await localDataSource.updateUser(
+        final user = await remoteDataSource.updateUser(
           id: id,
           username: username,
           password: password,
@@ -122,7 +119,7 @@ class UserRepositoryImpl implements UserRepository {
       try {
         await remoteDataSource.deleteUser(id);
       } catch (_) {
-        await localDataSource.deleteUser(id);
+        await remoteDataSource.deleteUser(id);
       }
       return const Right(null);
     } on CacheException catch (e) {
@@ -144,7 +141,7 @@ class UserRepositoryImpl implements UserRepository {
         ).toList();
         return Right(filtered.map((e) => e.toEntity()).toList());
       } catch (_) {
-        final users = await localDataSource.searchUsers(query);
+        final users = await remoteDataSource.searchUsers(query);
         return Right(users.map((user) => user.toEntity()).toList());
       }
     } on CacheException catch (e) {
@@ -163,7 +160,7 @@ class UserRepositoryImpl implements UserRepository {
         final updated = await remoteDataSource.updateUser(id: id, isActive: !current.isActive);
         return Right(updated.toEntity());
       } catch (_) {
-        final user = await localDataSource.toggleUserStatus(id);
+        final user = await remoteDataSource.toggleUserStatus(id);
         return Right(user.toEntity());
       }
     } on CacheException catch (e) {

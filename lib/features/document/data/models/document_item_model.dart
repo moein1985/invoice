@@ -1,9 +1,4 @@
-import 'package:hive/hive.dart';
 import '../../domain/entities/document_item_entity.dart';
-
-part 'document_item_model.g.dart';
-
-@HiveType(typeId: 4)
 class DocumentItemModel extends DocumentItemEntity {
   const DocumentItemModel({
     required super.id,
@@ -20,47 +15,36 @@ class DocumentItemModel extends DocumentItemEntity {
   });
 
   @override
-  @HiveField(0)
   String get id => super.id;
 
   @override
-  @HiveField(1)
   String get productName => super.productName;
 
   @override
-  @HiveField(2)
   int get quantity => super.quantity;
 
   @override
-  @HiveField(3)
   String get unit => super.unit;
 
   @override
-  @HiveField(4)
   double get purchasePrice => super.purchasePrice;
 
   @override
-  @HiveField(5)
   double get sellPrice => super.sellPrice;
 
   @override
-  @HiveField(6)
   double get totalPrice => super.totalPrice;
 
   @override
-  @HiveField(7)
   double get profitPercentage => super.profitPercentage;
 
   @override
-  @HiveField(8)
   String get supplier => super.supplier;
 
   @override
-  @HiveField(9)
   String? get description => super.description;
 
   @override
-  @HiveField(10)
   bool get isManualPrice => super.isManualPrice;
 
   factory DocumentItemModel.fromEntity(DocumentItemEntity entity) {

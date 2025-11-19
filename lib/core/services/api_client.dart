@@ -1,13 +1,22 @@
 import 'package:dio/dio.dart';
-import 'package:hive/hive.dart';
 
 import '../constants/env.dart';
-import '../constants/hive_boxes.dart';
 
 class ApiClient {
   final Dio _dio;
+  static String? _authToken;
 
   Dio get dio => _dio;
+
+  static void setToken(String? token) {
+    _authToken = token;
+  }
+
+  static String? getToken() {
+    return _authToken;
+  }
+
+  static bool get isLoggedIn => _authToken != null && _authToken!.isNotEmpty;
 
   ApiClient._internal(this._dio);
 
@@ -23,16 +32,13 @@ class ApiClient {
       ),
     );
 
-    // Attach auth token from Hive (if exists)
+    // Attach auth token if exists
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        try {
-          final authBox = Hive.box(HiveBoxes.auth);
-          final token = authBox.get('token');
-          if (token != null) {
-            options.headers['Authorization'] = 'Bearer $token';
-          }
-        } catch (_) {}
+        final token = _authToken;
+        if (token != null && token.isNotEmpty) {
+          options.headers['Authorization'] = 'Bearer $token';
+        }
         handler.next(options);
       },
     ));

@@ -4,6 +4,7 @@ class CustomerEntity extends Equatable {
   final String id;
   final String name;
   final String phone;
+  final List<String>? phoneNumbers; // لیست شماره تلفن‌ها برای SIP
   final String? email;
   final String? address;
   final String? company;
@@ -18,6 +19,7 @@ class CustomerEntity extends Equatable {
     required this.id,
     required this.name,
     required this.phone,
+    this.phoneNumbers,
     this.email,
     this.address,
     this.company,
@@ -43,6 +45,7 @@ class CustomerEntity extends Equatable {
         id,
         name,
         phone,
+        phoneNumbers,
         email,
         address,
         company,
@@ -59,6 +62,7 @@ class CustomerEntity extends Equatable {
       'id': id,
       'name': name,
       'phone': phone,
+      'phoneNumbers': phoneNumbers,
       'email': email,
       'address': address,
       'company': company,
@@ -76,6 +80,7 @@ class CustomerEntity extends Equatable {
       id: json['id'] as String,
       name: json['name'] as String,
       phone: json['phone'] as String,
+      phoneNumbers: json['phoneNumbers'] != null ? List<String>.from(json['phoneNumbers']) : null,
       email: json['email'] as String?,
       address: json['address'] as String?,
       company: json['company'] as String?,
