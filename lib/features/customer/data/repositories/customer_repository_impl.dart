@@ -65,13 +65,8 @@ class CustomerRepositoryImpl implements CustomerRepository {  final CustomerRemo
   Future<Either<Failure, CustomerEntity>> createCustomer(CustomerEntity customer) async {
     try {
       final m = CustomerModel.fromEntity(customer);
-      try {
-        final saved = await remoteDataSource.createCustomer(m);
-        return Right(saved.toEntity());
-      } catch (_) {
-        final saved = await remoteDataSource.saveCustomer(m);
-        return Right(saved.toEntity());
-      }
+      final saved = await remoteDataSource.createCustomer(m);
+      return Right(saved.toEntity());
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     }
@@ -130,8 +125,7 @@ class CustomerRepositoryImpl implements CustomerRepository {  final CustomerRemo
         final updated = await remoteDataSource.updateCustomer(toggled);
         return Right(updated.toEntity());
       } catch (_) {
-        final updatedCustomer = await remoteDataSource.toggleCustomerStatus(id);
-        return Right(updatedCustomer.toEntity());
+        return Left(CacheFailure('Toggle status not implemented'));
       }
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
@@ -140,12 +134,7 @@ class CustomerRepositoryImpl implements CustomerRepository {  final CustomerRemo
 
   @override
   Future<Either<Failure, CustomerEntity>> updateCustomerDebt(String id, double newDebt) async {
-    try {
-      // سرور فعلاً فیلد بدهی ندارد؛ به حالت آفلاین برمی‌گردیم
-      final updatedCustomer = await remoteDataSource.updateCustomerDebt(id, newDebt);
-      return Right(updatedCustomer.toEntity());
-    } on CacheException catch (e) {
-      return Left(CacheFailure(e.message));
-    }
+    // TODO: Implement debt management in backend
+    return Left(CacheFailure('Update debt not implemented'));
   }
 }

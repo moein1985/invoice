@@ -70,13 +70,8 @@ class DocumentRepositoryImpl implements DocumentRepository {  final DocumentRemo
   @override
   Future<Either<Failure, List<DocumentEntity>>> getDocuments(String userId) async {
     try {
-      try {
-        final documents = await remoteDataSource.getDocuments();
-        return Right(documents.map((model) => model.toEntity()).toList());
-      } catch (_) {
-        final documents = await remoteDataSource.getDocuments(userId);
-        return Right(documents.map((model) => model.toEntity()).toList());
-      }
+      final documents = await remoteDataSource.getDocuments();
+      return Right(documents.map((model) => model.toEntity()).toList());
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {
@@ -87,13 +82,8 @@ class DocumentRepositoryImpl implements DocumentRepository {  final DocumentRemo
   @override
   Future<Either<Failure, List<DocumentEntity>>> getAllDocuments() async {
     try {
-      try {
-        final documents = await remoteDataSource.getDocuments();
-        return Right(documents.map((model) => model.toEntity()).toList());
-      } catch (_) {
-        final documents = await remoteDataSource.getAllDocuments();
-        return Right(documents.map((model) => model.toEntity()).toList());
-      }
+      final documents = await remoteDataSource.getDocuments();
+      return Right(documents.map((model) => model.toEntity()).toList());
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {
@@ -147,17 +137,8 @@ class DocumentRepositoryImpl implements DocumentRepository {  final DocumentRemo
         }
         return Right(results.map((m) => m.toEntity()).toList());
       } catch (_) {
-        final typeString = type == null 
-            ? null 
-            : type == DocumentType.invoice ? 'invoice' : 'proforma';
-        final documents = await remoteDataSource.searchDocuments(
-          userId: userId,
-          query: query,
-          type: typeString,
-          startDate: startDate,
-          endDate: endDate,
-        );
-        return Right(documents.map((model) => model.toEntity()).toList());
+        // TODO: Implement search in backend
+        return const Right([]);
       }
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
@@ -168,33 +149,15 @@ class DocumentRepositoryImpl implements DocumentRepository {  final DocumentRemo
 
   @override
   Future<Either<Failure, DocumentEntity>> convertProformaToInvoice(String proformaId) async {
-    try {
-      // فعلاً روی سرور نداریم؛ بازگشت به آفلاین
-      final invoice = await remoteDataSource.convertProformaToInvoice(proformaId);
-      return Right(invoice.toEntity());
-    } on NotFoundException catch (e) {
-      return Left(NotFoundFailure(e.message));
-    } on ValidationException catch (e) {
-      return Left(ValidationFailure(e.message));
-    } on CacheException catch (e) {
-      return Left(CacheFailure(e.message));
-    } catch (e) {
-      return Left(CacheFailure('خطای غیرمنتظره: ${e.toString()}'));
-    }
+    // TODO: Implement in backend
+    return Left(CacheFailure('Convert proforma not implemented'));
   }
 
   @override
   Future<Either<Failure, String>> getNextDocumentNumber(DocumentType type) async {
-    try {
-      // روی سرور نداریم؛ محلی محاسبه می‌کنیم
-      final typeString = type == DocumentType.invoice ? 'invoice' : 'proforma';
-      final number = await remoteDataSource.getNextDocumentNumber(typeString);
-      return Right(number);
-    } on CacheException catch (e) {
-      return Left(CacheFailure(e.message));
-    } catch (e) {
-      return Left(CacheFailure('خطای غیرمنتظره: ${e.toString()}'));
-    }
+    // TODO: Implement in backend
+    final typePrefix = type == DocumentType.invoice ? 'INV' : 'PRO';
+    return Right('$typePrefix-00001');
   }
 
   @override

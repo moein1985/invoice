@@ -31,9 +31,11 @@ import 'features/document/presentation/bloc/approval_event.dart';
 import 'features/document/presentation/pages/approval_queue_page.dart';
 import 'core/services/approval_polling_service.dart';
 import 'core/enums/document_type.dart';
+import 'core/enums/user_role.dart';
 import 'injection_container.dart' as di;
 import 'core/services/sip_integration_service.dart';
 import 'core/models/sip_config.dart';
+import 'core/services/backend_service.dart';
 import 'dart:js' as js;
 
 bool _appServicesInitialized = false;
@@ -84,6 +86,14 @@ Future<void> _initializeAppServices() async {
   AppLogger.currentLevel = LogLevel.debug;
 
   AppLogger.info('🚀 Application Starting...', 'MAIN');
+
+  // راه‌اندازی Backend (Docker + MySQL + Node.js)
+  final backendStarted = await BackendService.startBackend();
+  if (!backendStarted) {
+    AppLogger.error('❌ Failed to start backend services!', 'MAIN');
+    AppLogger.error('⚠️  Please ensure Docker Desktop is running', 'MAIN');
+    // می‌توانید در اینجا یک دیالوگ به کاربر نشان دهید
+  }
 
   // مقداردهی اولیه Dependency Injection
   await di.init();
@@ -154,10 +164,27 @@ class _MainAppState extends State<MainApp> {
     }
   }
 
-  /// مقداردهی SIP Integration برای Web
+  /// مقداردهی SIP Integration برای Web (فقط برای Admin)
   Future<void> _initializeSipIntegration() async {
     try {
       debugPrint('📞 شروع مقداردهی SIP Integration...');
+      
+      // چک کردن کاربر فعلی Admin است یا نه
+      final authBloc = di.sl<AuthBloc>();
+      final currentState = authBloc.state;
+      
+      if (currentState is! Authenticated) {
+        debugPrint('⚠️ کاربر لاگین نکرده - لغو SIP');
+        return;
+      }
+      
+      // فقط برای کاربر با نقش admin
+      if (currentState.user.role != UserRole.admin) {
+        debugPrint('⚠️ SIP فقط برای Admin فعال است - کاربر فعلی: ${currentState.user.role.persianName}');
+        return;
+      }
+      
+      debugPrint('✅ کاربر Admin تأیید شد - ادامه مقداردهی SIP');
       
       // بررسی لود شدن JsSIP
       if (kIsWeb) {
@@ -216,7 +243,7 @@ class _MainAppState extends State<MainApp> {
       // مقداردهی و اتصال
       sipService.initialize(config);
       
-      debugPrint('✅ SIP Integration با موفقیت راه‌اندازی شد');
+      debugPrint('✅ SIP Integration با موفقیت راه‌اندازی شد (Admin only)');
     } catch (e, stackTrace) {
       debugPrint('❌ خطا در مقداردهی SIP Integration: $e');
       debugPrint('Stack: $stackTrace');

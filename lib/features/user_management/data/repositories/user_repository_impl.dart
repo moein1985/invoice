@@ -141,8 +141,8 @@ class UserRepositoryImpl implements UserRepository {  final UserRemoteDataSource
         ).toList();
         return Right(filtered.map((e) => e.toEntity()).toList());
       } catch (_) {
-        final users = await remoteDataSource.searchUsers(query);
-        return Right(users.map((user) => user.toEntity()).toList());
+        // TODO: Implement search in backend
+        return const Right([]);
       }
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
@@ -160,8 +160,7 @@ class UserRepositoryImpl implements UserRepository {  final UserRemoteDataSource
         final updated = await remoteDataSource.updateUser(id: id, isActive: !current.isActive);
         return Right(updated.toEntity());
       } catch (_) {
-        final user = await remoteDataSource.toggleUserStatus(id);
-        return Right(user.toEntity());
+        return Left(CacheFailure('Toggle status failed'));
       }
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
