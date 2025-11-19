@@ -286,21 +286,20 @@ class _MainAppState extends State<MainApp> {
             '/': (context) => BlocBuilder<AuthBloc, AuthState>(
               builder: (context, state) {
                 if (state is Authenticated) {
-
                   return MultiBlocProvider(
-                  providers: [
-                    BlocProvider.value(value: context.read<AuthBloc>()),
-                    BlocProvider(create: (context) => di.sl<DashboardBloc>()),
-                    BlocProvider(create: (context) => di.sl<UserBloc>()),
-                    BlocProvider(create: (context) => di.sl<CustomerBloc>()),
-                    BlocProvider(create: (context) => di.sl<DocumentBloc>()),
-                  ],
-                  child: const DashboardPage(),
-                );
-              }
-              return const LoginPage();
-            },
-          ),
+                    providers: [
+                      BlocProvider.value(value: context.read<AuthBloc>()),
+                      BlocProvider(create: (context) => di.sl<DashboardBloc>()),
+                      BlocProvider(create: (context) => di.sl<UserBloc>()),
+                      BlocProvider(create: (context) => di.sl<CustomerBloc>()),
+                      BlocProvider(create: (context) => di.sl<DocumentBloc>()),
+                    ],
+                    child: const DashboardPage(),
+                  );
+                }
+                return const LoginPage();
+              },
+            ),
           '/users': (context) => BlocProvider.value(
             value: di.sl<UserBloc>(),
             child: const UserListPage(),

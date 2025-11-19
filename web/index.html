@@ -85,6 +85,17 @@
       const script = document.createElement('script');
       script.src = 'flutter_bootstrap.js';
       script.async = true;
+      script.onload = function() {
+        console.log('✅ Flutter بارگذاری شد');
+        // حذف loading indicator بعد از 2 ثانیه (زمان کافی برای رندر اولیه Flutter)
+        setTimeout(() => {
+          const loadingDiv = document.getElementById('loading');
+          if (loadingDiv) {
+            loadingDiv.style.display = 'none';
+            console.log('✅ Loading indicator پنهان شد');
+          }
+        }, 2000);
+      };
       document.body.appendChild(script);
     }
 

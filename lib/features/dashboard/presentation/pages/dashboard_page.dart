@@ -80,8 +80,10 @@ class _DashboardPageState extends State<DashboardPage> {
         drawer: _buildDrawer(),
         body: BlocBuilder<DashboardBloc, DashboardState>(
           builder: (context, state) {
+            debugPrint('🔍 Dashboard State: ${state.runtimeType}');
+            
             if (state is DashboardInitial || state is DashboardLoading) {
-              return const LoadingWidget();
+              return const LoadingWidget(message: 'در حال بارگزاری داشبورد...');
             } else if (state is DashboardError) {
               return ErrorDisplayWidget(
                 message: state.message,
