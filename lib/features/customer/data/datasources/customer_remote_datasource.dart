@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../../../../core/error/exceptions.dart';
 import '../models/customer_model.dart';
 
@@ -15,46 +16,43 @@ class CustomerRemoteDataSourceImpl implements CustomerRemoteDataSource {
   CustomerRemoteDataSourceImpl({required this.dio});
 
   CustomerModel _fromApi(Map<String, dynamic> json) {
-    // Map backend minimal fields to model, keep optionals default
-    return CustomerModel(
-      id: json['id'],
-      name: json['name'],
-      phone: json['phone'] ?? '',
-      email: null,
-      address: json['address'],
-      company: null,
-      nationalId: null,
-      creditLimit: 0.0,
-      currentDebt: 0.0,
-      isActive: json['isActive'] ?? json['is_active'] ?? true,
-      createdAt: DateTime.parse((json['createdAt'] ?? json['created_at']).toString()),
-      lastTransaction: null,
-    );
+    // استفاده از fromJson که قبلاً type conversion ها را مدیریت می‌کند
+    return CustomerModel.fromJson(json);
   }
 
   Map<String, dynamic> _toApi(CustomerModel c) {
-    return {
-      'name': c.name,
-      'phone': c.phone,
-      'address': c.address,
-    };
+    // استفاده از toJson که قبلاً پیاده‌سازی شده
+    return c.toJson();
   }
 
   @override
   Future<List<CustomerModel>> getCustomers() async {
     try {
       final res = await dio.get('/api/customers');
-      // چک کردن آیا response یک array است یا object
-      if (res.data is List) {
+      
+      // چک کردن response format
+      if (res.data is Map && res.data.containsKey('data')) {
+        // Backend returns {data: [], pagination: {}}
+        final data = res.data['data'];
+        if (data is List) {
+          final list = data.cast<Map<String, dynamic>>();
+          return list.map(_fromApi).toList();
+        }
+      } else if (res.data is List) {
+        // Direct array response
         final list = (res.data as List).cast<Map<String, dynamic>>();
         return list.map(_fromApi).toList();
-      } else if (res.data is Map) {
-        // اگر object باشد، لیست خالی برمی‌گردانیم
-        return [];
       }
+      
       return [];
-    } on DioException {
+    } on DioException catch (e) {
+      debugPrint('🔴 [CustomerDataSource] DioException: ${e.type} - ${e.message}');
+      debugPrint('🔴 [CustomerDataSource] Response: ${e.response?.data}');
       throw CacheException('خطا در دریافت مشتریان');
+    } catch (e, stackTrace) {
+      debugPrint('🔴 [CustomerDataSource] Unexpected error: $e');
+      debugPrint('🔴 [CustomerDataSource] StackTrace: $stackTrace');
+      throw CacheException('خطای نامشخص: $e');
     }
   }
 
@@ -74,6 +72,8 @@ class CustomerRemoteDataSourceImpl implements CustomerRemoteDataSource {
       final res = await dio.post('/api/customers', data: _toApi(customer));
       return _fromApi(res.data as Map<String, dynamic>);
     } on DioException catch (e) {
+      debugPrint('🔴 [CustomerDataSource] Create failed: ${e.type} - ${e.message}');
+      debugPrint('🔴 [CustomerDataSource] Response: ${e.response?.data}');
       final msg = e.response?.data is Map && (e.response?.data['error'] != null)
           ? e.response?.data['error']
           : 'خطا در ایجاد مشتری';
@@ -87,6 +87,8 @@ class CustomerRemoteDataSourceImpl implements CustomerRemoteDataSource {
       final res = await dio.put('/api/customers/${customer.id}', data: _toApi(customer));
       return _fromApi(res.data as Map<String, dynamic>);
     } on DioException catch (e) {
+      debugPrint('🔴 [CustomerDataSource] Update failed: ${e.type} - ${e.message}');
+      debugPrint('🔴 [CustomerDataSource] Response: ${e.response?.data}');
       final msg = e.response?.data is Map && (e.response?.data['error'] != null)
           ? e.response?.data['error']
           : 'خطا در بروزرسانی مشتری';

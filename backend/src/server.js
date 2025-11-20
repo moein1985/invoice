@@ -15,16 +15,30 @@ const corsOptions = {
     // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
     
-    // In development, allow all origins
-    if (process.env.NODE_ENV === 'development') {
-      return callback(null, true);
+    // Default allowed origins for development
+    const defaultOrigins = [
+      'http://localhost:8080',
+      'http://localhost:3000',
+      'http://127.0.0.1:8080',
+      'http://127.0.0.1:3000'
+    ];
+    
+    // In development (NODE_ENV not set or explicitly 'development'), allow defaults
+    if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
+      if (defaultOrigins.includes(origin)) {
+        return callback(null, true);
+      }
     }
     
-    // In production, check against allowed origins
-    const allowedOrigins = (process.env.CORS_ORIGIN || '').split(',');
-    if (allowedOrigins.includes(origin)) {
+    // In production, check against allowed origins from env
+    const allowedOrigins = (process.env.CORS_ORIGIN || '').split(',').filter(o => o);
+    if (allowedOrigins.length > 0 && allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else if (allowedOrigins.length === 0 && defaultOrigins.includes(origin)) {
+      // Fallback to defaults if CORS_ORIGIN not set
       callback(null, true);
     } else {
+      console.error(`CORS blocked request from origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },

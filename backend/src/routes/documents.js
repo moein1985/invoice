@@ -1,76 +1,79 @@
-﻿const express = require('express');
-const { v4: uuidv4 } = require('uuid');
+const express = require('express');
 const Joi = require('joi');
 const pool = require('../config/database');
 const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Validation schemas
-const documentItemSchema = Joi.object({
-  productName: Joi.string().required(),
-  quantity: Joi.number().required(),
-  unit: Joi.string().required(),
-  purchasePrice: Joi.number().required(),
-  sellPrice: Joi.number().required(),
-  totalPrice: Joi.number().required(),
-  profitPercentage: Joi.number().required(),
-  supplier: Joi.string().allow('', null)
-});
-
-const documentSchema = Joi.object({
+// Validation Schema
+const documentsSchema = Joi.object({
+  userId: Joi.string().required(),
   documentNumber: Joi.string().required(),
-  documentType: Joi.string().valid('tempProforma', 'proforma', 'invoice', 'returnInvoice').required(),
+  documentType: Joi.string().required(),
   customerId: Joi.string().required(),
   documentDate: Joi.date().required(),
   totalAmount: Joi.number().required(),
-  discount: Joi.number().default(0),
+  discount: Joi.number().allow(null, ''),
   finalAmount: Joi.number().required(),
-  status: Joi.string().valid('paid', 'unpaid', 'pending').default('unpaid'),
-  notes: Joi.string().allow('', null),
-  items: Joi.array().items(documentItemSchema).required()
+  status: Joi.string().allow(null, ''),
+  notes: Joi.string().allow(null, ''),
+  attachment: Joi.string().allow(null, ''),
+  defaultProfitPercentage: Joi.number().allow(null, ''),
+  convertedFromId: Joi.string().allow(null, ''),
+  approvalStatus: Joi.string().allow(null, ''),
+  approvedBy: Joi.string().allow(null, ''),
+  approvedAt: Joi.date().allow(null, ''),
+  rejectionReason: Joi.string().allow(null, ''),
+  requiresApproval: Joi.number().allow(null, '')
 });
 
 // GET /api/documents
 router.get('/', authenticate, async (req, res) => {
   try {
-    const { type, status, page = 1, limit = 20 } = req.query;
+    const { page = 1, limit = 20, query } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
-
-    let sql = 'SELECT * FROM documents WHERE 1=1';
-    let countSql = 'SELECT COUNT(*) as total FROM documents WHERE 1=1';
     const params = [];
-    const countParams = [];
 
-    if (type) {
-      sql += ' AND document_type = ?';
-      countSql += ' AND document_type = ?';
-      params.push(type);
-      countParams.push(type);
-    }
+    let sql = 'SELECT id, user_id, document_number, document_type, customer_id, document_date, total_amount, discount, final_amount, status, notes, attachment, default_profit_percentage, converted_from_id, approval_status, approved_by, approved_at, rejection_reason, requires_approval, created_at, updated_at FROM documents WHERE 1=1';
+    let countSql = 'SELECT COUNT(*) as total FROM documents WHERE 1=1';
 
-    if (status) {
-      sql += ' AND status = ?';
-      countSql += ' AND status = ?';
-      params.push(status);
-      countParams.push(status);
+    if (query) {
+      // Add search logic here based on text columns
+      // sql += ' AND (name LIKE ?)';
+      // params.push(`%${query}%`);
     }
 
     sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
     params.push(parseInt(limit), offset);
 
-    const [documents] = await pool.query(sql, params);
-    const [countResult] = await pool.query(countSql, countParams);
+    const [rows] = await pool.query(sql, params);
+    const [countResult] = await pool.query(countSql, params.slice(0, -2));
     const total = countResult[0].total;
 
-    // Get items for each document
-    for (const doc of documents) {
-      const [items] = await pool.query('SELECT * FROM document_items WHERE document_id = ?', [doc.id]);
-      doc.items = items;
-    }
-
     res.json({
-      data: documents,
+      data: rows.map(item => ({
+        id: item.id,
+        userId: item.user_id,
+        documentNumber: item.document_number,
+        documentType: item.document_type,
+        customerId: item.customer_id,
+        documentDate: item.document_date,
+        totalAmount: item.total_amount !== null ? parseFloat(item.total_amount) : null,
+        discount: item.discount !== null ? parseFloat(item.discount) : null,
+        finalAmount: item.final_amount !== null ? parseFloat(item.final_amount) : null,
+        status: item.status,
+        notes: item.notes,
+        attachment: item.attachment,
+        defaultProfitPercentage: item.default_profit_percentage !== null ? parseFloat(item.default_profit_percentage) : null,
+        convertedFromId: item.converted_from_id,
+        approvalStatus: item.approval_status,
+        approvedBy: item.approved_by,
+        approvedAt: item.approved_at,
+        rejectionReason: item.rejection_reason,
+        requiresApproval: item.requires_approval === 1,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at
+      })),
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -80,202 +83,209 @@ router.get('/', authenticate, async (req, res) => {
     });
   } catch (error) {
     console.error('Get documents error:', error);
-    res.status(500).json({ error: 'خطا در دریافت اسناد' });
+    res.status(500).json({ error: 'خطا در دریافت اطلاعات' });
   }
 });
 
 // GET /api/documents/:id
 router.get('/:id', authenticate, async (req, res) => {
   try {
-    const [documents] = await pool.query('SELECT * FROM documents WHERE id = ?', [req.params.id]);
+    const [rows] = await pool.query(
+      'SELECT id, user_id, document_number, document_type, customer_id, document_date, total_amount, discount, final_amount, status, notes, attachment, default_profit_percentage, converted_from_id, approval_status, approved_by, approved_at, rejection_reason, requires_approval, created_at, updated_at FROM documents WHERE id = ?',
+      [req.params.id]
+    );
 
-    if (documents.length === 0) {
-      return res.status(404).json({ error: 'سند یافت نشد' });
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'رکورد یافت نشد' });
     }
 
-    const doc = documents[0];
-    const [items] = await pool.query('SELECT * FROM document_items WHERE document_id = ?', [doc.id]);
-    doc.items = items;
-
-    res.json(doc);
+    const item = rows[0];
+    res.json({
+        id: item.id,
+        userId: item.user_id,
+        documentNumber: item.document_number,
+        documentType: item.document_type,
+        customerId: item.customer_id,
+        documentDate: item.document_date,
+        totalAmount: item.total_amount !== null ? parseFloat(item.total_amount) : null,
+        discount: item.discount !== null ? parseFloat(item.discount) : null,
+        finalAmount: item.final_amount !== null ? parseFloat(item.final_amount) : null,
+        status: item.status,
+        notes: item.notes,
+        attachment: item.attachment,
+        defaultProfitPercentage: item.default_profit_percentage !== null ? parseFloat(item.default_profit_percentage) : null,
+        convertedFromId: item.converted_from_id,
+        approvalStatus: item.approval_status,
+        approvedBy: item.approved_by,
+        approvedAt: item.approved_at,
+        rejectionReason: item.rejection_reason,
+        requiresApproval: item.requires_approval === 1,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at
+    });
   } catch (error) {
-    console.error('Get document error:', error);
-    res.status(500).json({ error: 'خطا در دریافت سند' });
+    console.error('Get documents by id error:', error);
+    res.status(500).json({ error: 'خطا در دریافت اطلاعات' });
   }
 });
 
 // POST /api/documents
 router.post('/', authenticate, async (req, res) => {
-  const connection = await pool.getConnection();
-
   try {
-    await connection.beginTransaction();
-
-    const { error } = documentSchema.validate(req.body);
+    const { error, value } = documentsSchema.validate(req.body);
     if (error) {
-      await connection.rollback();
       return res.status(400).json({ error: error.details[0].message });
     }
 
-    const { documentNumber, documentType, customerId, documentDate, totalAmount, discount, finalAmount, status, notes, items } = req.body;
+    const { v4: uuidv4 } = require('uuid');
     const id = uuidv4();
+    
+    // Map camelCase to snake_case for DB
+    const dbData = {
+      id: id,
+      ...Object.keys(value).reduce((acc, key) => {
+        const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+        acc[snakeKey] = value[key];
+        return acc;
+      }, {})
+    };
 
-    await connection.query(
-      'INSERT INTO documents (id, user_id, document_number, document_type, customer_id, document_date, total_amount, discount, final_amount, status, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
-      [id, req.userId, documentNumber, documentType, customerId, documentDate, totalAmount, discount || 0, finalAmount, status || 'unpaid', notes || null]
+    const columns = Object.keys(dbData).join(', ');
+    const placeholders = Object.keys(dbData).map(() => '?').join(', ');
+    const values = Object.values(dbData);
+
+    await pool.query(
+      `INSERT INTO documents (${columns}) VALUES (${placeholders})`,
+      values
     );
 
-    // Insert items
-    for (const item of items) {
-      const itemId = uuidv4();
-      await connection.query(
-        'INSERT INTO document_items (id, document_id, product_name, quantity, unit, purchase_price, sell_price, total_price, profit_percentage, supplier, description, is_manual_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [itemId, id, item.productName, item.quantity, item.unit, item.purchasePrice, item.sellPrice, item.totalPrice, item.profitPercentage, item.supplier || '', item.description || '', item.isManualPrice || false]
-      );
-    }
+    // Fetch created item
+    const [rows] = await pool.query(
+      'SELECT id, user_id, document_number, document_type, customer_id, document_date, total_amount, discount, final_amount, status, notes, attachment, default_profit_percentage, converted_from_id, approval_status, approved_by, approved_at, rejection_reason, requires_approval, created_at, updated_at FROM documents WHERE id = ?',
+      [id]
+    );
 
-    await connection.commit();
-
-    const [newDocument] = await pool.query('SELECT * FROM documents WHERE id = ?', [id]);
-    const doc = newDocument[0];
-    const [newItems] = await pool.query('SELECT * FROM document_items WHERE document_id = ?', [doc.id]);
-    doc.items = newItems;
-
-    res.status(201).json(doc);
+    const item = rows[0];
+    res.status(201).json({
+        id: item.id,
+        userId: item.user_id,
+        documentNumber: item.document_number,
+        documentType: item.document_type,
+        customerId: item.customer_id,
+        documentDate: item.document_date,
+        totalAmount: item.total_amount !== null ? parseFloat(item.total_amount) : null,
+        discount: item.discount !== null ? parseFloat(item.discount) : null,
+        finalAmount: item.final_amount !== null ? parseFloat(item.final_amount) : null,
+        status: item.status,
+        notes: item.notes,
+        attachment: item.attachment,
+        defaultProfitPercentage: item.default_profit_percentage !== null ? parseFloat(item.default_profit_percentage) : null,
+        convertedFromId: item.converted_from_id,
+        approvalStatus: item.approval_status,
+        approvedBy: item.approved_by,
+        approvedAt: item.approved_at,
+        rejectionReason: item.rejection_reason,
+        requiresApproval: item.requires_approval === 1,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at
+    });
   } catch (error) {
-    await connection.rollback();
-    console.error('Create document error:', error);
-    res.status(500).json({ error: 'خطا در ایجاد سند' });
-  } finally {
-    connection.release();
+    console.error('Create documents error:', error);
+    res.status(500).json({ error: 'خطا در ایجاد رکورد' });
   }
 });
 
 // PUT /api/documents/:id
 router.put('/:id', authenticate, async (req, res) => {
   try {
-    const updates = [];
-    const values = [];
-
-    const m = req.body || {};
-    if (m.status) { updates.push('status = ?'); values.push(m.status); }
-    if (typeof m.notes !== 'undefined') { updates.push('notes = ?'); values.push(m.notes || null); }
-    if (typeof m.approvalStatus !== 'undefined') { updates.push('approval_status = ?'); values.push(m.approvalStatus); }
-    if (typeof m.requiresApproval !== 'undefined') { updates.push('requires_approval = ?'); values.push(!!m.requiresApproval); }
-    if (typeof m.approvedBy !== 'undefined') { updates.push('approved_by = ?'); values.push(m.approvedBy || null); }
-    if (typeof m.approvedAt !== 'undefined') { updates.push('approved_at = ?'); values.push(m.approvedAt ? new Date(m.approvedAt) : null); }
-    if (typeof m.rejectionReason !== 'undefined') { updates.push('rejection_reason = ?'); values.push(m.rejectionReason || null); }
-
-    if (updates.length === 0) {
-      return res.status(400).json({ error: 'No fields to update' });
+    // For PUT, allow partial updates by making all fields optional
+    const updateSchema = documentsSchema.fork(
+      Object.keys(documentsSchema.describe().keys),
+      (schema) => schema.optional()
+    );
+    
+    const { error, value } = updateSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message });
     }
 
-    values.push(req.params.id);
-
-    await pool.query(`UPDATE documents SET ${updates.join(', ')}, updated_at = NOW() WHERE id = ?`, values);
-
-    const [rows] = await pool.query('SELECT * FROM documents WHERE id = ?', [req.params.id]);
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'سند یافت نشد' });
+    // Check if exists
+    const [check] = await pool.query('SELECT id FROM documents WHERE id = ?', [req.params.id]);
+    if (check.length === 0) {
+      return res.status(404).json({ error: 'رکورد یافت نشد' });
     }
-    const doc = rows[0];
-    const [items] = await pool.query('SELECT * FROM document_items WHERE document_id = ?', [doc.id]);
-    doc.items = items;
-    res.json(doc);
+
+    // Map camelCase to snake_case - only for fields that were sent
+    const updates = Object.keys(req.body).reduce((acc, key) => {
+      if (value[key] !== undefined) {
+        const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+        acc[snakeKey] = value[key];
+      }
+      return acc;
+    }, {});
+
+    if (Object.keys(updates).length > 0) {
+      const setClause = Object.keys(updates).map(k => `${k} = ?`).join(', ');
+      const values = [...Object.values(updates), req.params.id];
+
+      await pool.query(
+        `UPDATE documents SET ${setClause} WHERE id = ?`,
+        values
+      );
+    }
+
+    // Fetch updated item
+    const [rows] = await pool.query(
+      'SELECT id, user_id, document_number, document_type, customer_id, document_date, total_amount, discount, final_amount, status, notes, attachment, default_profit_percentage, converted_from_id, approval_status, approved_by, approved_at, rejection_reason, requires_approval, created_at, updated_at FROM documents WHERE id = ?',
+      [req.params.id]
+    );
+
+    const item = rows[0];
+    res.json({
+        id: item.id,
+        userId: item.user_id,
+        documentNumber: item.document_number,
+        documentType: item.document_type,
+        customerId: item.customer_id,
+        documentDate: item.document_date,
+        totalAmount: item.total_amount !== null ? parseFloat(item.total_amount) : null,
+        discount: item.discount !== null ? parseFloat(item.discount) : null,
+        finalAmount: item.final_amount !== null ? parseFloat(item.final_amount) : null,
+        status: item.status,
+        notes: item.notes,
+        attachment: item.attachment,
+        defaultProfitPercentage: item.default_profit_percentage !== null ? parseFloat(item.default_profit_percentage) : null,
+        convertedFromId: item.converted_from_id,
+        approvalStatus: item.approval_status,
+        approvedBy: item.approved_by,
+        approvedAt: item.approved_at,
+        rejectionReason: item.rejection_reason,
+        requiresApproval: item.requires_approval === 1,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at
+    });
   } catch (error) {
-    console.error('Update document error:', error);
-    res.status(500).json({ error: 'خطا در بروزرسانی سند' });
+    console.error('Update documents error:', error);
+    res.status(500).json({ error: 'خطا در ویرایش رکورد' });
   }
 });
 
 // DELETE /api/documents/:id
 router.delete('/:id', authenticate, async (req, res) => {
-  const connection = await pool.getConnection();
   try {
-    await connection.beginTransaction();
-    const [exists] = await connection.query('SELECT id FROM documents WHERE id = ?', [req.params.id]);
-    if (exists.length === 0) {
-      await connection.rollback();
-      return res.status(404).json({ error: 'سند یافت نشد' });
+    const [result] = await pool.query('DELETE FROM documents WHERE id = ?', [req.params.id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'رکورد یافت نشد' });
     }
-    await connection.query('DELETE FROM document_items WHERE document_id = ?', [req.params.id]);
-    await connection.query('DELETE FROM documents WHERE id = ?', [req.params.id]);
-    await connection.commit();
-    res.json({ message: 'سند با موفقیت حذف شد' });
+
+    res.json({ message: 'رکورد با موفقیت حذف شد' });
   } catch (error) {
-    await connection.rollback();
-    console.error('Delete document error:', error);
-    res.status(500).json({ error: 'خطا در حذف سند' });
-  } finally {
-    connection.release();
-  }
-});
-
-// GET /api/documents/approvals/pending
-router.get('/approvals/pending', authenticate, async (req, res) => {
-  try {
-    const [documents] = await pool.query(
-      'SELECT * FROM documents WHERE approval_status = ? AND document_type = ? ORDER BY created_at DESC',
-      ['pending', 'tempProforma']
-    );
-
-    for (const doc of documents) {
-      const [items] = await pool.query('SELECT * FROM document_items WHERE document_id = ?', [doc.id]);
-      doc.items = items;
+    console.error('Delete documents error:', error);
+    if (error.code === 'ER_ROW_IS_REFERENCED_2') {
+      return res.status(400).json({ error: 'این رکورد دارای وابستگی است و قابل حذف نیست' });
     }
-
-    res.json(documents);
-  } catch (error) {
-    console.error('Get pending approvals error:', error);
-    res.status(500).json({ error: 'خطا در دریافت اسناد منتظر تایید' });
-  }
-});
-
-// POST /api/documents/:id/approve
-router.post('/:id/approve', authenticate, async (req, res) => {
-  try {
-    await pool.query(
-      'UPDATE documents SET approval_status = ?, approved_by = ?, approved_at = NOW() WHERE id = ?',
-      ['approved', req.userId, req.params.id]
-    );
-
-    const [updated] = await pool.query('SELECT * FROM documents WHERE id = ?', [req.params.id]);
-
-    if (updated.length === 0) {
-      return res.status(404).json({ error: 'سند یافت نشد' });
-    }
-
-    res.json(updated[0]);
-  } catch (error) {
-    console.error('Approve document error:', error);
-    res.status(500).json({ error: 'خطا در تایید سند' });
-  }
-});
-
-// POST /api/documents/:id/reject
-router.post('/:id/reject', authenticate, async (req, res) => {
-  try {
-    const { reason } = req.body;
-
-    if (!reason) {
-      return res.status(400).json({ error: 'دلیل رد الزامی است' });
-    }
-
-    await pool.query(
-      'UPDATE documents SET approval_status = ?, approved_by = ?, approved_at = NOW(), rejection_reason = ? WHERE id = ?',
-      ['rejected', req.userId, reason, req.params.id]
-    );
-
-    const [updated] = await pool.query('SELECT * FROM documents WHERE id = ?', [req.params.id]);
-
-    if (updated.length === 0) {
-      return res.status(404).json({ error: 'سند یافت نشد' });
-    }
-
-    res.json(updated[0]);
-  } catch (error) {
-    console.error('Reject document error:', error);
-    res.status(500).json({ error: 'خطا در رد سند' });
+    res.status(500).json({ error: 'خطا در حذف رکورد' });
   }
 });
 

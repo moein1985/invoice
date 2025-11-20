@@ -1,7 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:uuid/uuid.dart';
 import '../../../../core/error/exceptions.dart';
-import '../models/document_item_model.dart';
 import '../models/document_model.dart';
 
 abstract class DocumentRemoteDataSource {
@@ -16,7 +14,6 @@ abstract class DocumentRemoteDataSource {
 
 class DocumentRemoteDataSourceImpl implements DocumentRemoteDataSource {
   final Dio dio;
-  final _uuid = const Uuid();
   DocumentRemoteDataSourceImpl({required this.dio});
 
   DocumentModel _fromApi(Map<String, dynamic> json) {
@@ -35,89 +32,55 @@ class DocumentRemoteDataSourceImpl implements DocumentRemoteDataSource {
       }
     }
 
-    DateTime parseDate(dynamic v) {
-      if (v == null) return DateTime.now();
-      return DateTime.parse(v.toString());
-    }
-
-    final items = (json['items'] as List? ?? [])
-        .cast<Map<String, dynamic>>()
-        .map((i) => DocumentItemModel(
-              id: (i['id'] ?? _uuid.v4()).toString(),
-              productName: i['product_name'] ?? i['productName'],
-              quantity: (i['quantity'] as num).toInt(),
-              unit: i['unit'],
-              purchasePrice: ((i['purchase_price'] ?? i['purchasePrice']) as num).toDouble(),
-              sellPrice: ((i['sell_price'] ?? i['sellPrice']) as num).toDouble(),
-              totalPrice: ((i['total_price'] ?? i['totalPrice']) as num).toDouble(),
-              profitPercentage: ((i['profit_percentage'] ?? i['profitPercentage']) as num).toDouble(),
-              supplier: i['supplier'] ?? '',
-              description: i['description'],
-              isManualPrice: i['is_manual_price'] ?? i['isManualPrice'] ?? false,
-            ))
-        .toList();
-
-    return DocumentModel(
-      id: (json['id'] ?? '').toString(),
-      userId: (json['user_id'] ?? json['userId'] ?? '').toString(),
-      documentNumber: (json['document_number'] ?? json['documentNumber'] ?? '').toString(),
-      documentTypeString: mapDocType(json['document_type'] ?? json['documentType'] ?? 'tempProforma'),
-      customerId: (json['customer_id'] ?? json['customerId'] ?? '').toString(),
-      documentDate: parseDate(json['document_date'] ?? json['documentDate']),
-      items: items,
-      totalAmount: ((json['total_amount'] ?? json['totalAmount'] ?? 0) as num).toDouble(),
-      discount: ((json['discount'] ?? 0) as num).toDouble(),
-      finalAmount: ((json['final_amount'] ?? json['finalAmount'] ?? 0) as num).toDouble(),
-      statusString: (json['status'] ?? 'unpaid').toString(),
-      notes: json['notes'] as String?,
-      createdAt: parseDate(json['created_at'] ?? json['createdAt'] ?? DateTime.now().toIso8601String()),
-      updatedAt: parseDate(json['updated_at'] ?? json['updatedAt'] ?? json['created_at'] ?? json['createdAt'] ?? DateTime.now().toIso8601String()),
-      attachment: json['attachment'] as String?,
-      defaultProfitPercentage: ((json['default_profit_percentage'] ?? json['defaultProfitPercentage'] ?? 22) as num).toDouble(),
-      convertedFromId: json['converted_from_id'] ?? json['convertedFromId'] as String?,
-      approvalStatus: (json['approval_status'] ?? json['approvalStatus'] ?? 'notRequired').toString(),
-      approvedBy: (json['approved_by'] ?? json['approvedBy'])?.toString(),
-      approvedAt: (json['approved_at'] ?? json['approvedAt']) != null ? parseDate(json['approved_at'] ?? json['approvedAt']) : null,
-      rejectionReason: (json['rejection_reason'] ?? json['rejectionReason'])?.toString(),
-      requiresApproval: (json['requires_approval'] ?? json['requiresApproval'] ?? false) as bool,
-    );
+    // نرمال‌سازی key ها برای fromJson
+    final normalizedJson = {
+      'id': (json['id'] ?? '').toString(),
+      'userId': (json['user_id'] ?? json['userId'] ?? '').toString(),
+      'documentNumber': (json['document_number'] ?? json['documentNumber'] ?? '').toString(),
+      'documentType': mapDocType(json['document_type'] ?? json['documentType'] ?? 'tempProforma'),
+      'customerId': (json['customer_id'] ?? json['customerId'] ?? '').toString(),
+      'documentDate': (json['document_date'] ?? json['documentDate'] ?? DateTime.now().toIso8601String()),
+      'totalAmount': (json['total_amount'] ?? json['totalAmount'] ?? 0),
+      'discount': (json['discount'] ?? 0),
+      'finalAmount': (json['final_amount'] ?? json['finalAmount'] ?? 0),
+      'status': (json['status'] ?? 'unpaid'),
+      'notes': json['notes'],
+      'createdAt': (json['created_at'] ?? json['createdAt'] ?? DateTime.now().toIso8601String()),
+      'updatedAt': (json['updated_at'] ?? json['updatedAt'] ?? json['created_at'] ?? json['createdAt'] ?? DateTime.now().toIso8601String()),
+      'attachment': json['attachment'],
+      'defaultProfitPercentage': (json['default_profit_percentage'] ?? json['defaultProfitPercentage'] ?? 22),
+      'convertedFromId': (json['converted_from_id'] ?? json['convertedFromId']),
+      'approvalStatus': (json['approval_status'] ?? json['approvalStatus'] ?? 'pending'),
+      'approvedBy': (json['approved_by'] ?? json['approvedBy']),
+      'approvedAt': (json['approved_at'] ?? json['approvedAt']),
+      'rejectionReason': (json['rejection_reason'] ?? json['rejectionReason']),
+      'requiresApproval': (json['requires_approval'] ?? json['requiresApproval'] ?? false),
+    };
+    return DocumentModel.fromJson(normalizedJson);
   }
 
   Map<String, dynamic> _toApi(DocumentModel d) {
-    String mapDocTypeOut(String s) {
-      switch (s) {
-        case 'temp_proforma':
-          return 'tempProforma';
-        case 'proforma':
-          return 'proforma';
-        case 'invoice':
-          return 'invoice';
-        case 'return':
-          return 'returnInvoice';
-        default:
-          return 'tempProforma';
-      }
-    }
-
+    // استفاده از toJson و فقط نرمال‌سازی key ها برای API
+    final json = d.toJson();
     return {
-      'documentNumber': d.documentNumber,
-      'documentType': mapDocTypeOut(d.documentTypeString),
-      'customerId': d.customerId,
-      'documentDate': d.documentDate.toIso8601String(),
-      'items': d.items.map((i) => i.toJson()).toList(),
-      'totalAmount': d.totalAmount,
-      'discount': d.discount,
-      'finalAmount': d.finalAmount,
-      'status': d.statusString,
-      'notes': d.notes,
-      'attachment': d.attachment,
-      'defaultProfitPercentage': d.defaultProfitPercentage,
-      'convertedFromId': d.convertedFromId,
-      'approvalStatus': d.approvalStatus,
-      'approvedBy': d.approvedBy,
-      'approvedAt': d.approvedAt?.toIso8601String(),
-      'rejectionReason': d.rejectionReason,
-      'requiresApproval': d.requiresApproval,
+      'documentNumber': json['documentNumber'],
+      'documentType': json['documentType'],
+      'customerId': json['customerId'],
+      'documentDate': json['documentDate'],
+      // items جداگانه مدیریت می‌شوند، اینجا نمی‌فرستیم
+      'totalAmount': json['totalAmount'],
+      'discount': json['discount'],
+      'finalAmount': json['finalAmount'],
+      'status': json['status'],
+      'notes': json['notes'],
+      'attachment': json['attachment'],
+      'defaultProfitPercentage': json['defaultProfitPercentage'],
+      'convertedFromId': json['convertedFromId'],
+      'approvalStatus': json['approvalStatus'],
+      'approvedBy': json['approvedBy'],
+      'approvedAt': json['approvedAt'],
+      'rejectionReason': json['rejectionReason'],
+      'requiresApproval': json['requiresApproval'],
     };
   }
 
@@ -138,7 +101,7 @@ class DocumentRemoteDataSourceImpl implements DocumentRemoteDataSource {
   Future<DocumentModel> updateDocument(DocumentModel document) async {
     try {
       final payload = {
-        'status': document.statusString,
+        'status': document.status,
         'notes': document.notes,
         'approvalStatus': document.approvalStatus,
         'approvedBy': document.approvedBy,

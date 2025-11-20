@@ -33,7 +33,7 @@ class CustomerRepositoryImpl implements CustomerRepository {  final CustomerRemo
         final customers = await remoteDataSource.getCustomers();
         final q = query.toLowerCase();
         final filtered = customers.where((c) =>
-          c.name.toLowerCase().contains(q) || c.phone.contains(query) ||
+          c.name.toLowerCase().contains(q) || (c.phone?.contains(query) ?? false) ||
           (c.address?.toLowerCase().contains(q) ?? false)
         ).toList();
         return Right(filtered.map((e) => e.toEntity()).toList());
@@ -108,19 +108,8 @@ class CustomerRepositoryImpl implements CustomerRepository {  final CustomerRemo
       // از سرور با update isActive معکوس پیاده‌سازی می‌کنیم
       try {
         final current = await remoteDataSource.getCustomerById(id);
-        final toggled = CustomerModel(
-          id: current.id,
-          name: current.name,
-          phone: current.phone,
-          email: current.email,
-          address: current.address,
-          company: current.company,
-          nationalId: current.nationalId,
-          creditLimit: current.creditLimit,
-          currentDebt: current.currentDebt,
-          isActive: !current.isActive,
-          createdAt: current.createdAt,
-          lastTransaction: current.lastTransaction,
+        final toggled = current.copyWith(
+          isActive: !(current.isActive ?? true),
         );
         final updated = await remoteDataSource.updateCustomer(toggled);
         return Right(updated.toEntity());

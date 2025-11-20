@@ -157,7 +157,7 @@ class UserRepositoryImpl implements UserRepository {  final UserRemoteDataSource
       // روی سرور endpoint خاص ندارد؛ با updateUser isActive را برعکس می‌کنیم
       try {
         final current = await remoteDataSource.getUserById(id);
-        final updated = await remoteDataSource.updateUser(id: id, isActive: !current.isActive);
+        final updated = await remoteDataSource.updateUser(id: id, isActive: !(current.isActive ?? true));
         return Right(updated.toEntity());
       } catch (_) {
         return Left(CacheFailure('Toggle status failed'));

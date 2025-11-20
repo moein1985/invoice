@@ -1,4 +1,5 @@
-import 'dart:js' as js;
+import 'dart:js_interop';
+import 'dart:js_interop_unsafe';
 import 'package:flutter/foundation.dart';
 import 'package:invoice/core/models/sip_config.dart';
 import 'package:invoice/core/models/call_info.dart';
@@ -200,47 +201,47 @@ class WebSipService {
         })();
       """;
       
-      js.context.callMethod('eval', [jsCode]);
+      globalContext.callMethod('eval'.toJS, jsCode.toJS);
 
       // ثبت Dart Callbacks
-      js.context['dartOnIncomingCall'] = (String callerNumber, String callerName, String callId) {
+      globalContext.setProperty('dartOnIncomingCall'.toJS, (JSString callerNumber, JSString callerName, JSString callId) {
         _currentCall = CallInfo(
-          callId: callId,
-          callerNumber: callerNumber,
-          callerName: callerName,
+          callId: callId.toDart,
+          callerNumber: callerNumber.toDart,
+          callerName: callerName.toDart,
           startTime: DateTime.now(),
           direction: CallDirection.incoming,
           status: CallStatus.ringing,
         );
         
         if (onIncomingCall != null) {
-          onIncomingCall!(callerNumber, callerName);
+          onIncomingCall!(callerNumber.toDart, callerName.toDart);
         }
-      };
+      }.toJS);
 
-      js.context['dartOnCallConnected'] = () {
+      globalContext.setProperty('dartOnCallConnected'.toJS, () {
         if (_currentCall != null) {
           _currentCall = _currentCall!.copyWith(status: CallStatus.connected);
         }
         onCallConnected?.call();
-      };
+      }.toJS);
 
-      js.context['dartOnCallEnded'] = () {
+      globalContext.setProperty('dartOnCallEnded'.toJS, () {
         if (_currentCall != null) {
           _currentCall = _currentCall!.copyWith(status: CallStatus.ended);
         }
         onCallEnded?.call();
         _currentCall = null;
-      };
+      }.toJS);
 
-      js.context['dartOnRegistrationChanged'] = (bool isRegistered) {
-        _isRegistered = isRegistered;
-        onRegistrationChanged?.call(isRegistered);
-      };
+      globalContext.setProperty('dartOnRegistrationChanged'.toJS, (JSBoolean isRegistered) {
+        _isRegistered = isRegistered.toDart;
+        onRegistrationChanged?.call(isRegistered.toDart);
+      }.toJS);
 
-      js.context['dartOnError'] = (String error) {
-        onError?.call(error);
-      };
+      globalContext.setProperty('dartOnError'.toJS, (JSString error) {
+        onError?.call(error.toDart);
+      }.toJS);
 
       _isInitialized = true;
       debugPrint('✅ WebSipService راه‌اندازی شد');
@@ -280,7 +281,7 @@ class WebSipService {
         }
       """;
       
-      js.context.callMethod('eval', [answerCode]);
+      globalContext.callMethod('eval'.toJS, answerCode.toJS);
       
       if (_currentCall != null) {
         _currentCall = _currentCall!.copyWith(status: CallStatus.connecting);
@@ -320,7 +321,7 @@ class WebSipService {
         console.log('📞 در حال برقراری تماس با:', target);
       """;
       
-      js.context.callMethod('eval', [callCode]);
+      globalContext.callMethod('eval'.toJS, callCode.toJS);
       
       _currentCall = CallInfo(
         callId: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -349,7 +350,7 @@ class WebSipService {
         }
       """;
       
-      js.context.callMethod('eval', [hangupCode]);
+      globalContext.callMethod('eval'.toJS, hangupCode.toJS);
       
       if (_currentCall != null) {
         _currentCall = _currentCall!.copyWith(status: CallStatus.ended);
@@ -372,7 +373,7 @@ class WebSipService {
         }
       """;
       
-      js.context.callMethod('eval', [dtmfCode]);
+      globalContext.callMethod('eval'.toJS, dtmfCode.toJS);
     } catch (error) {
       debugPrint('❌ خطا در ارسال DTMF: $error');
     }
@@ -391,7 +392,7 @@ class WebSipService {
         }
       """;
       
-      js.context.callMethod('eval', [stopCode]);
+      globalContext.callMethod('eval'.toJS, stopCode.toJS);
       
       _isInitialized = false;
       _isRegistered = false;

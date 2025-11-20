@@ -6,7 +6,20 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "init-db": "node src/database/init.js"
+    "init-db": "node src/database/init.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:pact": "jest tests/contract/verify-pact.test.js",
+    "extract-schema": "node scripts/extract-schema.js",
+    "generate-docs": "node scripts/generate-schema-docs.js",
+    "validate-schema": "node scripts/validate-backend-schema.js",
+    "generate:route": "node scripts/generate-route-from-schema.js",
+    "generate:model": "node scripts/generate-dart-model.js",
+    "generate:all": "node scripts/generate-all.js",
+    "db:setup": "node scripts/setup-test-db.js",
+    "db:seed": "node scripts/seed-test-data.js",
+    "db:reset": "npm run db:setup && npm run db:seed"
   },
   "keywords": ["invoice", "api", "backend"],
   "author": "",
@@ -22,6 +35,25 @@
     "joi": "^17.11.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2"
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "@types/jest": "^29.5.8",
+    "@pact-foundation/pact": "^12.1.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coverageThreshold": {
+      "global": {
+        "branches": 70,
+        "functions": 70,
+        "lines": 70,
+        "statements": 70
+      }
+    },
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/server.js"
+    ]
   }
 }

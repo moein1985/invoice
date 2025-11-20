@@ -8,7 +8,7 @@ void main() {
       final model = UserModel(
         id: 'u1',
         username: 'bob',
-        password: 'pass',
+        passwordHash: 'pass',
         fullName: 'Bob',
         role: 'employee',
         isActive: true,
@@ -19,7 +19,7 @@ void main() {
       final restored = UserModel.fromJson(json);
       expect(restored.id, equals(model.id));
       expect(restored.username, equals(model.username));
-      expect(restored.createdAt.toUtc(), equals(model.createdAt.toUtc()));
+      expect(restored.createdAt?.toUtc(), equals(model.createdAt?.toUtc()));
     });
 
     test('copyWith changes fields', () {
@@ -27,7 +27,7 @@ void main() {
       final model = UserModel(
         id: 'u1',
         username: 'bob',
-        password: 'pass',
+        passwordHash: 'pass',
         fullName: 'Bob',
         role: 'employee',
         isActive: true,

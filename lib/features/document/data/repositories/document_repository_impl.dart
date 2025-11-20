@@ -124,7 +124,7 @@ class DocumentRepositoryImpl implements DocumentRepository {  final DocumentRemo
         var results = all;
         if (type != null) {
           final t = type == DocumentType.invoice ? 'invoice' : (type == DocumentType.proforma ? 'proforma' : 'temp_proforma');
-          results = results.where((d) => d.documentTypeString == t).toList();
+          results = results.where((d) => d.documentType == t).toList();
         }
         if (startDate != null) {
           results = results.where((d) => !d.documentDate.isBefore(startDate)).toList();
@@ -169,29 +169,12 @@ class DocumentRepositoryImpl implements DocumentRepository {  final DocumentRemo
       } catch (_) {
         // Fallback to local update
         final doc = await remoteDataSource.getDocumentById(documentId);
-        final updated = DocumentModel(
-          id: doc.id,
-          userId: doc.userId,
-          documentNumber: doc.documentNumber,
-          documentTypeString: doc.documentTypeString,
-          customerId: doc.customerId,
-          documentDate: doc.documentDate,
-          items: doc.items,
-          totalAmount: doc.totalAmount,
-          discount: doc.discount,
-          finalAmount: doc.finalAmount,
-          statusString: doc.statusString,
-          notes: doc.notes,
-          createdAt: doc.createdAt,
-          updatedAt: DateTime.now(),
-          attachment: doc.attachment,
-          defaultProfitPercentage: doc.defaultProfitPercentage,
-          convertedFromId: doc.convertedFromId,
+        final updated = doc.copyWith(
           approvalStatus: 'approved',
           approvedBy: approvedBy,
           approvedAt: DateTime.now(),
           rejectionReason: null,
-          requiresApproval: doc.requiresApproval,
+          updatedAt: DateTime.now(),
         );
         final result = await remoteDataSource.updateDocument(updated);
         return Right(result.toEntity());
@@ -214,29 +197,12 @@ class DocumentRepositoryImpl implements DocumentRepository {  final DocumentRemo
       } catch (_) {
         // Fallback to local update
         final doc = await remoteDataSource.getDocumentById(documentId);
-        final updated = DocumentModel(
-          id: doc.id,
-          userId: doc.userId,
-          documentNumber: doc.documentNumber,
-          documentTypeString: doc.documentTypeString,
-          customerId: doc.customerId,
-          documentDate: doc.documentDate,
-          items: doc.items,
-          totalAmount: doc.totalAmount,
-          discount: doc.discount,
-          finalAmount: doc.finalAmount,
-          statusString: doc.statusString,
-          notes: doc.notes,
-          createdAt: doc.createdAt,
-          updatedAt: DateTime.now(),
-          attachment: doc.attachment,
-          defaultProfitPercentage: doc.defaultProfitPercentage,
-          convertedFromId: doc.convertedFromId,
+        final updated = doc.copyWith(
           approvalStatus: 'rejected',
           approvedBy: rejectedBy,
           approvedAt: DateTime.now(),
           rejectionReason: reason,
-          requiresApproval: doc.requiresApproval,
+          updatedAt: DateTime.now(),
         );
         final result = await remoteDataSource.updateDocument(updated);
         return Right(result.toEntity());

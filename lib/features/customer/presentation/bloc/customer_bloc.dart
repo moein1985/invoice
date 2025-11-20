@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../../domain/usecases/create_customer_usecase.dart';
@@ -41,7 +42,10 @@ class CustomerBloc extends Bloc<CustomerEvent, CustomerState> {
     emit(CustomerLoading());
     final result = await getCustomersUseCase.call();
     result.fold(
-      (failure) => emit(CustomerError(failure.message)),
+      (failure) {
+        debugPrint('🔴 [CustomerBloc] Failed to load customers: ${failure.message}');
+        emit(CustomerError(failure.message));
+      },
       (customers) => emit(CustomersLoaded(customers)),
     );
   }

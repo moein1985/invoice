@@ -27,30 +27,29 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   UserRemoteDataSourceImpl({required this.dio});
 
   UserModel _fromApi(Map<String, dynamic> json) {
-    return UserModel(
-      id: json['id'],
-      username: json['username'],
-      password: '',
-      fullName: json['fullName'] ?? json['full_name'] ?? '',
-      role: json['role'],
-      isActive: json['isActive'] ?? json['is_active'] ?? true,
-      createdAt: DateTime.parse((json['createdAt'] ?? json['created_at']).toString()),
-      lastLogin: null,
-    );
+    // استفاده از fromJson که قبلاً type conversion ها را مدیریت می‌کند
+    return UserModel.fromJson(json);
   }
 
   @override
   Future<List<UserModel>> getUsers() async {
     try {
       final res = await dio.get('/api/users');
-      // چک کردن آیا response یک array است یا object
-      if (res.data is List) {
+      
+      // چک کردن response format
+      if (res.data is Map && res.data.containsKey('data')) {
+        // Backend returns {data: [], pagination: {}}
+        final data = res.data['data'];
+        if (data is List) {
+          final list = data.cast<Map<String, dynamic>>();
+          return list.map(_fromApi).toList();
+        }
+      } else if (res.data is List) {
+        // Direct array response
         final list = (res.data as List).cast<Map<String, dynamic>>();
         return list.map(_fromApi).toList();
-      } else if (res.data is Map) {
-        // اگر object باشد، لیست خالی برمی‌گردانیم
-        return [];
       }
+      
       return [];
     } on DioException {
       throw CacheException('خطا در دریافت کاربران');

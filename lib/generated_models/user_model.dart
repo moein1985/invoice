@@ -1,6 +1,4 @@
 import 'package:equatable/equatable.dart';
-import '../../domain/entities/user_entity.dart';
-import '../../../../core/enums/user_role.dart';
 
 class UserModel extends Equatable {
   final String id;
@@ -27,12 +25,12 @@ class UserModel extends Equatable {
     return UserModel(
       id: json['id'],
       username: json['username'],
-      passwordHash: json['passwordHash'] ?? json['password_hash'] ?? '', // Backend اش را برنمی‌گرداند
-      fullName: json['fullName'] ?? json['full_name'] ?? '',
+      passwordHash: json['passwordHash'],
+      fullName: json['fullName'],
       role: json['role'],
-      isActive: _parseBool(json['isActive'] ?? json['is_active']),
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : (json['created_at'] != null ? DateTime.parse(json['created_at']) : null),
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : (json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null),
+      isActive: _parseBool(json['isActive']),
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
     );
   }
 
@@ -83,46 +81,4 @@ class UserModel extends Equatable {
     return false;
   }
 
-  // تبدیل Model به Entity
-  UserEntity toEntity() {
-    return UserEntity(
-      id: id,
-      username: username,
-      password: passwordHash, // در Entity password است اما در Model passwordHash
-      fullName: fullName,
-      role: _parseRole(role),
-      isActive: isActive ?? true,
-      createdAt: createdAt ?? DateTime.now(),
-      lastLogin: null, // این فیلد در دیتابیس نیست
-    );
-  }
-
-  // تبدیل Entity به Model
-  factory UserModel.fromEntity(UserEntity entity) {
-    return UserModel(
-      id: entity.id,
-      username: entity.username,
-      passwordHash: entity.password, // در Entity password است
-      fullName: entity.fullName,
-      role: entity.role.toString().split('.').last,
-      isActive: entity.isActive,
-      createdAt: entity.createdAt,
-    );
-  }
-
-  // تبدیل String به UserRole
-  static UserRole _parseRole(String? roleStr) {
-    if (roleStr == null) return UserRole.employee;
-    switch (roleStr.toLowerCase()) {
-      case 'admin':
-        return UserRole.admin;
-      case 'manager':
-        return UserRole.manager;
-      case 'supervisor':
-        return UserRole.supervisor;
-      case 'employee':
-      default:
-        return UserRole.employee;
-    }
-  }
 }

@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import '../../domain/entities/customer_entity.dart';
 
 class CustomerModel extends Equatable {
   final String id;
@@ -112,41 +111,5 @@ class CustomerModel extends Equatable {
     if (value is int) return value.toDouble();
     if (value is String) return double.tryParse(value) ?? 0.0;
     return 0.0;
-  }
-
-  // تبدیل Model به Entity
-  CustomerEntity toEntity() {
-    return CustomerEntity(
-      id: id,
-      name: name,
-      phone: phone ?? '',
-      phoneNumbers: phoneNumbers != null ? phoneNumbers!.split(',').map((e) => e.trim()).toList() : null,
-      email: email,
-      address: address,
-      company: company,
-      nationalId: null, // این فیلد در دیتابیس نیست
-      creditLimit: creditLimit ?? 0.0,
-      currentDebt: currentDebt ?? 0.0,
-      isActive: isActive ?? true,
-      createdAt: createdAt ?? DateTime.now(),
-      lastTransaction: null, // این فیلد در دیتابیس نیست
-    );
-  }
-
-  // تبدیل Entity به Model
-  factory CustomerModel.fromEntity(CustomerEntity entity) {
-    return CustomerModel(
-      id: entity.id,
-      name: entity.name,
-      phone: entity.phone,
-      email: entity.email,
-      company: entity.company,
-      creditLimit: entity.creditLimit,
-      currentDebt: entity.currentDebt,
-      address: entity.address,
-      isActive: entity.isActive,
-      createdAt: entity.createdAt,
-      phoneNumbers: entity.phoneNumbers?.join(', '),
-    );
   }
 }

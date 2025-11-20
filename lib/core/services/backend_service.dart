@@ -9,6 +9,14 @@ class BackendService {
 
   /// راه‌اندازی کامل Backend (Docker + MySQL + Node.js)
   static Future<bool> startBackend() async {
+    // در Web، Backend باید از قبل اجرا شده باشد
+    if (kIsWeb) {
+      debugPrint('🌐 Running on Web - Backend should be started manually');
+      debugPrint('ℹ️  Make sure Docker and Backend are running on host machine');
+      _isRunning = true;
+      return true;
+    }
+
     if (_isRunning) {
       debugPrint('✅ Backend already running');
       return true;

@@ -1,0 +1,719 @@
+{
+  "database": "invoice_db",
+  "extractedAt": "2025-11-20T08:46:10.838Z",
+  "tables": {
+    "customers": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "varchar",
+          "fullType": "varchar(36)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "name",
+          "type": "varchar",
+          "fullType": "varchar(100)",
+          "nullable": false,
+          "default": null,
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "phone",
+          "type": "varchar",
+          "fullType": "varchar(20)",
+          "nullable": true,
+          "default": null,
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "email",
+          "type": "varchar",
+          "fullType": "varchar(100)",
+          "nullable": true,
+          "default": "",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "company",
+          "type": "varchar",
+          "fullType": "varchar(200)",
+          "nullable": true,
+          "default": "",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "credit_limit",
+          "type": "decimal",
+          "fullType": "decimal(15,2)",
+          "nullable": true,
+          "default": "0.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "current_debt",
+          "type": "decimal",
+          "fullType": "decimal(15,2)",
+          "nullable": true,
+          "default": "0.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "address",
+          "type": "text",
+          "fullType": "text",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "is_active",
+          "type": "tinyint",
+          "fullType": "tinyint(1)",
+          "nullable": true,
+          "default": "1",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "fullType": "timestamp",
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "DEFAULT_GENERATED",
+          "comment": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "fullType": "timestamp",
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+          "comment": ""
+        },
+        {
+          "name": "phone_numbers",
+          "type": "json",
+          "fullType": "json",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": {
+        "idx_name": {
+          "columns": [
+            "name"
+          ],
+          "unique": false,
+          "type": "BTREE"
+        },
+        "idx_phone": {
+          "columns": [
+            "phone"
+          ],
+          "unique": false,
+          "type": "BTREE"
+        },
+        "PRIMARY": {
+          "columns": [
+            "id"
+          ],
+          "unique": true,
+          "type": "BTREE"
+        }
+      }
+    },
+    "document_items": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "varchar",
+          "fullType": "varchar(36)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "document_id",
+          "type": "varchar",
+          "fullType": "varchar(36)",
+          "nullable": false,
+          "default": null,
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "product_name",
+          "type": "varchar",
+          "fullType": "varchar(100)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "quantity",
+          "type": "decimal",
+          "fullType": "decimal(10,2)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "unit",
+          "type": "varchar",
+          "fullType": "varchar(20)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "purchase_price",
+          "type": "decimal",
+          "fullType": "decimal(15,2)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "sell_price",
+          "type": "decimal",
+          "fullType": "decimal(15,2)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "total_price",
+          "type": "decimal",
+          "fullType": "decimal(15,2)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "profit_percentage",
+          "type": "decimal",
+          "fullType": "decimal(5,2)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "supplier",
+          "type": "varchar",
+          "fullType": "varchar(100)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "fullType": "timestamp",
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "DEFAULT_GENERATED",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [
+        {
+          "column": "document_id",
+          "referencedTable": "documents",
+          "referencedColumn": "id",
+          "constraintName": "document_items_ibfk_1"
+        }
+      ],
+      "indexes": {
+        "idx_document_id": {
+          "columns": [
+            "document_id"
+          ],
+          "unique": false,
+          "type": "BTREE"
+        },
+        "PRIMARY": {
+          "columns": [
+            "id"
+          ],
+          "unique": true,
+          "type": "BTREE"
+        }
+      }
+    },
+    "documents": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "varchar",
+          "fullType": "varchar(36)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "user_id",
+          "type": "varchar",
+          "fullType": "varchar(36)",
+          "nullable": false,
+          "default": null,
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "document_number",
+          "type": "varchar",
+          "fullType": "varchar(50)",
+          "nullable": false,
+          "default": null,
+          "key": "UNI",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "document_type",
+          "type": "enum",
+          "fullType": "enum('tempProforma','proforma','invoice','returnInvoice')",
+          "nullable": false,
+          "default": null,
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "customer_id",
+          "type": "varchar",
+          "fullType": "varchar(36)",
+          "nullable": false,
+          "default": null,
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "document_date",
+          "type": "timestamp",
+          "fullType": "timestamp",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "total_amount",
+          "type": "decimal",
+          "fullType": "decimal(15,2)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "discount",
+          "type": "decimal",
+          "fullType": "decimal(15,2)",
+          "nullable": true,
+          "default": "0.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "final_amount",
+          "type": "decimal",
+          "fullType": "decimal(15,2)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "status",
+          "type": "enum",
+          "fullType": "enum('paid','unpaid','pending')",
+          "nullable": true,
+          "default": "unpaid",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "fullType": "text",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "attachment",
+          "type": "varchar",
+          "fullType": "varchar(255)",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "default_profit_percentage",
+          "type": "decimal",
+          "fullType": "decimal(5,2)",
+          "nullable": true,
+          "default": "22.00",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "converted_from_id",
+          "type": "varchar",
+          "fullType": "varchar(36)",
+          "nullable": true,
+          "default": null,
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "approval_status",
+          "type": "enum",
+          "fullType": "enum('notRequired','pending','approved','rejected')",
+          "nullable": true,
+          "default": "notRequired",
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "approved_by",
+          "type": "varchar",
+          "fullType": "varchar(36)",
+          "nullable": true,
+          "default": null,
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "approved_at",
+          "type": "timestamp",
+          "fullType": "timestamp",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "rejection_reason",
+          "type": "text",
+          "fullType": "text",
+          "nullable": true,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "requires_approval",
+          "type": "tinyint",
+          "fullType": "tinyint(1)",
+          "nullable": true,
+          "default": "0",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "fullType": "timestamp",
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "MUL",
+          "extra": "DEFAULT_GENERATED",
+          "comment": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "fullType": "timestamp",
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [
+        {
+          "column": "user_id",
+          "referencedTable": "users",
+          "referencedColumn": "id",
+          "constraintName": "documents_ibfk_1"
+        },
+        {
+          "column": "customer_id",
+          "referencedTable": "customers",
+          "referencedColumn": "id",
+          "constraintName": "documents_ibfk_2"
+        },
+        {
+          "column": "converted_from_id",
+          "referencedTable": "documents",
+          "referencedColumn": "id",
+          "constraintName": "documents_ibfk_3"
+        },
+        {
+          "column": "approved_by",
+          "referencedTable": "users",
+          "referencedColumn": "id",
+          "constraintName": "documents_ibfk_4"
+        }
+      ],
+      "indexes": {
+        "approved_by": {
+          "columns": [
+            "approved_by"
+          ],
+          "unique": false,
+          "type": "BTREE"
+        },
+        "converted_from_id": {
+          "columns": [
+            "converted_from_id"
+          ],
+          "unique": false,
+          "type": "BTREE"
+        },
+        "document_number": {
+          "columns": [
+            "document_number"
+          ],
+          "unique": true,
+          "type": "BTREE"
+        },
+        "idx_approval_status": {
+          "columns": [
+            "approval_status"
+          ],
+          "unique": false,
+          "type": "BTREE"
+        },
+        "idx_created_at": {
+          "columns": [
+            "created_at"
+          ],
+          "unique": false,
+          "type": "BTREE"
+        },
+        "idx_customer_id": {
+          "columns": [
+            "customer_id"
+          ],
+          "unique": false,
+          "type": "BTREE"
+        },
+        "idx_document_number": {
+          "columns": [
+            "document_number"
+          ],
+          "unique": false,
+          "type": "BTREE"
+        },
+        "idx_document_type": {
+          "columns": [
+            "document_type"
+          ],
+          "unique": false,
+          "type": "BTREE"
+        },
+        "idx_user_id": {
+          "columns": [
+            "user_id"
+          ],
+          "unique": false,
+          "type": "BTREE"
+        },
+        "PRIMARY": {
+          "columns": [
+            "id"
+          ],
+          "unique": true,
+          "type": "BTREE"
+        }
+      }
+    },
+    "users": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "varchar",
+          "fullType": "varchar(36)",
+          "nullable": false,
+          "default": null,
+          "key": "PRI",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "username",
+          "type": "varchar",
+          "fullType": "varchar(50)",
+          "nullable": false,
+          "default": null,
+          "key": "UNI",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "password_hash",
+          "type": "varchar",
+          "fullType": "varchar(255)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "full_name",
+          "type": "varchar",
+          "fullType": "varchar(100)",
+          "nullable": false,
+          "default": null,
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "role",
+          "type": "enum",
+          "fullType": "enum('employee','supervisor','manager','admin')",
+          "nullable": true,
+          "default": "employee",
+          "key": "MUL",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "is_active",
+          "type": "tinyint",
+          "fullType": "tinyint(1)",
+          "nullable": true,
+          "default": "1",
+          "key": "",
+          "extra": "",
+          "comment": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "fullType": "timestamp",
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "DEFAULT_GENERATED",
+          "comment": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "fullType": "timestamp",
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "key": "",
+          "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+          "comment": ""
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": {
+        "idx_role": {
+          "columns": [
+            "role"
+          ],
+          "unique": false,
+          "type": "BTREE"
+        },
+        "idx_username": {
+          "columns": [
+            "username"
+          ],
+          "unique": false,
+          "type": "BTREE"
+        },
+        "PRIMARY": {
+          "columns": [
+            "id"
+          ],
+          "unique": true,
+          "type": "BTREE"
+        },
+        "username": {
+          "columns": [
+            "username"
+          ],
+          "unique": true,
+          "type": "BTREE"
+        }
+      }
+    }
+  }
+}
